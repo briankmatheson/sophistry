@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: briankmatheson/sophistry:0.3.0
+          image: briankmatheson/sophistry-web:0.3.0
           ports:
             - containerPort: 8000
           envFrom:
