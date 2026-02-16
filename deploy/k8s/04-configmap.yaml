@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sophistry-config
+  namespace: sophistry
+data:
+  DJANGO_DEBUG: "false"
+  DJANGO_ALLOWED_HOSTS: "*"
+  PG_WRITER_HOST: "sophistry-pg-rw"
+  PG_READER_HOST: "sophistry-pg-ro"
+  PG_PORT: "5432"
+  CELERY_CONCURRENCY: "8"

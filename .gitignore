@@ -1,0 +1,13 @@
+# Python
+**/__pycache__/
+*.pyc
+.env
+backend/.venv/
+backend/staticfiles/
+
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/build/
+flutter_app/.pub/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies

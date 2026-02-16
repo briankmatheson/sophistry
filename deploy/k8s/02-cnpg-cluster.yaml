@@ -1,0 +1,16 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: sophistry-pg
+  namespace: sophistry
+spec:
+  instances: 4
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 20Gi
+  bootstrap:
+    initdb:
+      database: sophistry
+      owner: sophistry
+      secret:
+        name: sophistry-secrets

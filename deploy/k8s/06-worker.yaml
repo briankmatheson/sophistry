@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sophistry-worker
+  namespace: sophistry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sophistry-worker
+  template:
+    metadata:
+      labels:
+        app: sophistry-worker
+    spec:
+      containers:
+        - name: worker
+          image: yourrepo/sophistry-backend:0.3.0
+          envFrom:
+            - configMapRef:
+                name: sophistry-config
+            - secretRef:
+                name: sophistry-secrets
+          env:
+            - name: ROLE
+              value: worker

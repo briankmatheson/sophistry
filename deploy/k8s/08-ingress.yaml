@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sophistry
+  namespace: sophistry
+spec:
+  rules:
+    - host: sophistry.online
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sophistry-web
+                port:
+                  number: 80
