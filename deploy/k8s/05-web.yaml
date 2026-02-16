@@ -13,6 +13,8 @@ spec:
       labels:
         app: sophistry-web
     spec:
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: web
           image: briankmatheson/sophistry-web:0.3.0
