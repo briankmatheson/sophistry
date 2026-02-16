@@ -6,3 +6,4 @@
 .packages
 .pub-cache/
 build/
+lib/config.dart

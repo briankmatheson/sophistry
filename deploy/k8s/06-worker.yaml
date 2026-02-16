@@ -13,6 +13,8 @@ spec:
       labels:
         app: sophistry-worker
     spec:
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: worker
           image: briankmatheson/sophistry:0.3.0
@@ -24,3 +26,15 @@ spec:
           env:
             - name: ROLE
               value: worker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sophistry-worker
+  namespace: sophistry
+spec:
+  selector:
+    app: sophistry-worker
+  ports:
+    - port: 80
+      targetPort: 8000

@@ -4,7 +4,7 @@ metadata:
   name: sophistry-web
   namespace: sophistry
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: sophistry-web
@@ -13,8 +13,6 @@ spec:
       labels:
         app: sophistry-web
     spec:
-      securityContext:
-        runAsUser: 1000
       containers:
         - name: web
           image: briankmatheson/sophistry-web:0.3.0
@@ -28,6 +26,8 @@ spec:
           env:
             - name: ROLE
               value: web
+            - name: BACKEND_BASE_URL
+              value: https://worker.sophistry.online
 ---
 apiVersion: v1
 kind: Service
