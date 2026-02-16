@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: yourrepo/sophistry-backend:0.3.0
+          image: briankmatheson/sophistry-backend:0.3.0
           envFrom:
             - configMapRef:
                 name: sophistry-config
