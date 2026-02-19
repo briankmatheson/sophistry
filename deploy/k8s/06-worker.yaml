@@ -17,7 +17,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: worker
-          image: briankmatheson/sophistry-worker:0.5.14
+          image: briankmatheson/sophistry-worker:0.5.15
           envFrom:
             - configMapRef:
                 name: sophistry-config
