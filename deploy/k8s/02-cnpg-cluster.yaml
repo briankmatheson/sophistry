@@ -25,7 +25,7 @@ spec:
 apiVersion: v1
 data:
   username: c29waGlzdHJ5
-  password: MjBlZmFlYjhjZDMwMWRlZTY2YWExNTYzNjUzMzY5M2E=
+  password: 
 kind: Secret
 metadata:
   name: sophistry-db-secret
