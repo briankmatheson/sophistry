@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import 'dart:math' as math;
 import 'api.dart';
 import 'config.dart';
@@ -98,10 +99,61 @@ class _SophistryHomeState extends State<SophistryHome> {
   final titleCtl = TextEditingController();
   final promptCtl = TextEditingController();
 
+  // live preview scoring
+  Map<String, dynamic>? previewResult;
+  Timer? _previewTimer;
+  String? _lastPreviewText;
+
   @override
   void initState() {
     super.initState();
+    answerCtl.addListener(_onAnswerChanged);
     _init();
+  }
+
+  @override
+  void dispose() {
+    _previewTimer?.cancel();
+    answerCtl.removeListener(_onAnswerChanged);
+    answerCtl.dispose();
+    answerFocus.dispose();
+    slugCtl.dispose();
+    titleCtl.dispose();
+    promptCtl.dispose();
+    super.dispose();
+  }
+
+  void _onAnswerChanged() {
+    final text = answerCtl.text.trim();
+    if (text == _lastPreviewText) return;
+    _lastPreviewText = text;
+
+    _previewTimer?.cancel();
+
+    // Clear preview immediately if empty
+    if (text.isEmpty) {
+      setState(() => previewResult = null);
+      return;
+    }
+
+    // Debounce: wait 600ms after typing stops
+    _previewTimer = Timer(const Duration(milliseconds: 600), () {
+      _fetchPreview(text);
+    });
+  }
+
+  Future<void> _fetchPreview(String text) async {
+    if (currentQuestion == null) return;
+    final tcId = (currentQuestion!['testcase_id'] as num).toInt();
+    try {
+      final result = await api.previewScore(testcaseId: tcId, answer: text);
+      // Only update if the text hasn't changed since we fired
+      if (answerCtl.text.trim() == text && mounted) {
+        setState(() => previewResult = result);
+      }
+    } catch (_) {
+      // Silently ignore preview errors — don't disrupt the flow
+    }
   }
 
   Future<void> _init() async {
@@ -205,6 +257,9 @@ class _SophistryHomeState extends State<SophistryHome> {
 
       questionsAnswered++;
       answerCtl.clear();
+      _previewTimer?.cancel();
+      _lastPreviewText = null;
+      previewResult = null;
       saveProgress(questionsAnswered);
 
       if (questionsAnswered >= AppConfig.questionsPerSession) {
@@ -450,6 +505,9 @@ class _SophistryHomeState extends State<SophistryHome> {
             ),
           ),
           const SizedBox(height: 10),
+          // ─── live preview ───────────────────────────────
+          if (previewResult != null) _buildPreviewFeedback(),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -485,6 +543,74 @@ class _SophistryHomeState extends State<SophistryHome> {
           style: TextStyle(fontSize: 11, color: Colors.grey[600]),
         ),
       ],
+    );
+  }
+
+  // ─── LIVE PREVIEW FEEDBACK ──────────────────────────────
+  Widget _buildPreviewFeedback() {
+    final details = previewResult?['score_details'] as Map<String, dynamic>? ?? {};
+    final score0100 = (details['score_0_100'] as num?)?.toDouble() ?? 0;
+    final band = details['band'] as String? ?? '';
+    final notes = (details['notes'] as List<dynamic>?)?.cast<String>() ?? [];
+    final validation = details['validation'] as Map<String, dynamic>? ?? {};
+    final wc = validation['word_count'] as int? ?? 0;
+    final minWords = validation['min_words'] as int? ?? 100;
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.75),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _purple.withOpacity(0.2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // mini dial
+            SophistryDial(score: score0100, size: const Size(80, 44)),
+            const SizedBox(width: 12),
+            // notes + word count
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    band,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _purple.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  // word count indicator
+                  Text(
+                    '$wc / $minWords words',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: wc >= minWords ? _green : Colors.grey[500],
+                    ),
+                  ),
+                  if (notes.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    ...notes.map((n) => Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        n,
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                    )),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -59,6 +59,25 @@ class SophistryApi {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// Preview structural score without persisting a Result
+  Future<Map<String, dynamic>> previewScore({
+    required int testcaseId,
+    required String answer,
+  }) async {
+    final res = await http.post(
+      _u('/api/mobile/preview_score/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'testcase_id': testcaseId,
+        'answer': answer,
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('previewScore failed: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   /// Submit a new testcase (user-contributed question)
   Future<void> submitTestcase({
     required String slug,
