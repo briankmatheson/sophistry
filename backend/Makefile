@@ -5,8 +5,10 @@ VERSION ?= dev
 
 .PHONY: build push run shell test migrate clean
 
-build:
+build-no-cache:
 	docker build --no-cache -t $(IMAGE):$(VERSION) .
+build:
+	docker build  -t $(IMAGE):$(VERSION) .
 
 push:
 	docker push $(IMAGE):$(VERSION)

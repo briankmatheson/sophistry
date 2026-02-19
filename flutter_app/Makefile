@@ -8,8 +8,10 @@ BACKEND_URL ?= https://app.sophistry.online
 .PHONY: build push run-web apk clean
 
 # ─── docker (web) ─────────────────────────────────────────
-build:
+build-nocache:
 	docker build --no-cache -t $(IMAGE):$(VERSION) .
+build:
+	docker build -t $(IMAGE):$(VERSION) .
 
 push:
 	docker push $(IMAGE):$(VERSION)
