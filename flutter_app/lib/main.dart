@@ -104,6 +104,9 @@ class _SophistryHomeState extends State<SophistryHome> {
   Timer? _previewTimer;
   String? _lastPreviewText;
 
+  // version info
+  String backendVersion = '…';
+
   @override
   void initState() {
     super.initState();
@@ -157,6 +160,11 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Future<void> _init() async {
+    // Fetch backend version (non-blocking)
+    api.getBackendVersion().then((v) {
+      if (mounted) setState(() => backendVersion = v);
+    });
+
     sessionId = getSessionId();
     final savedRun = getSavedRunUuid();
 
@@ -404,6 +412,15 @@ class _SophistryHomeState extends State<SophistryHome> {
       appBar: AppBar(
         title: const Text('Sophistry'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: Text(
+                'fe ${AppConfig.appVersion} · be $backendVersion',
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              ),
+            ),
+          ),
           IconButton(
             onPressed: canAddTestcase && !busy ? _addTestcase : null,
             icon: const Icon(Icons.add_circle_outline),
@@ -419,6 +436,10 @@ class _SophistryHomeState extends State<SophistryHome> {
       body: Stack(
         children: [
           // graph paper background
+          Positioned.fill(
+            child: CustomPaint(painter: _GraphPaperPainter()),
+          ),
+          // content
           loading
               ? const Center(child: CircularProgressIndicator())
               : inReview

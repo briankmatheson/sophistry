@@ -10,6 +10,18 @@ class SophistryApi {
       Uri.parse('$baseUrl$path').replace(
           queryParameters: q?.map((k, v) => MapEntry(k, '$v')));
 
+  /// Get backend version from root endpoint
+  Future<String> getBackendVersion() async {
+    try {
+      final res = await http.get(_u('/'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data['version'] as String? ?? '?';
+      }
+    } catch (_) {}
+    return '?';
+  }
+
   /// Create a new run, returns run_uuid
   Future<String> createRun() async {
     final res = await http.post(_u('/api/mobile/run/'));

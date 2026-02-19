@@ -6,9 +6,9 @@ VERSION ?= dev
 .PHONY: build push run shell test migrate clean
 
 build-no-cache:
-	docker build --no-cache -t $(IMAGE):$(VERSION) .
+	docker build --no-cache --build-arg APP_VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
 build:
-	docker build  -t $(IMAGE):$(VERSION) .
+	docker build --build-arg APP_VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
 
 push:
 	docker push $(IMAGE):$(VERSION)

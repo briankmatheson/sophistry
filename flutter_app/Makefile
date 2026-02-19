@@ -9,19 +9,19 @@ BACKEND_URL ?= https://app.sophistry.online
 
 # ─── docker (web) ─────────────────────────────────────────
 build-nocache:
-	docker build --no-cache -t $(IMAGE):$(VERSION) .
+	docker build --no-cache --build-arg APP_VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
 build:
-	docker build -t $(IMAGE):$(VERSION) .
+	docker build --build-arg APP_VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
 
 push:
 	docker push $(IMAGE):$(VERSION)
 
 # ─── local flutter dev ────────────────────────────────────
 run-web:
-	flutter run -d chrome --dart-define=BACKEND_BASE_URL=$(BACKEND_URL)
+	flutter run -d chrome --dart-define=BACKEND_BASE_URL=$(BACKEND_URL) --dart-define=APP_VERSION=$(VERSION)
 
 run-android:
-	flutter run --dart-define=BACKEND_BASE_URL=$(BACKEND_URL)
+	flutter run --dart-define=BACKEND_BASE_URL=$(BACKEND_URL) --dart-define=APP_VERSION=$(VERSION)
 
 # ─── APK build ────────────────────────────────────────────
 apk:

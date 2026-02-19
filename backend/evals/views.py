@@ -1,4 +1,5 @@
 from .scoring import score_answer
+import os
 import random
 from django.http import JsonResponse
 from rest_framework import decorators, response, status, viewsets
@@ -14,7 +15,7 @@ def perform_create(self, serializer):
     score_run.delay(str(run.id))
 
 def home(request):
-    return JsonResponse({"ok": True, "service": "sophistry-backend", "version": "0.6.0"})
+    return JsonResponse({"ok": True, "service": "sophistry-backend", "version": os.environ.get("APP_VERSION", "dev")})
 
 
 class TestCaseViewSet(viewsets.ModelViewSet):
