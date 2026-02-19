@@ -12,6 +12,7 @@ const _purple = Color(0xFF7C5CBF);
 const _purpleLight = Color(0xFFEDE7F6);
 const _green = Color(0xFF4CAF50);
 const _amber = Color(0xFFFFA726);
+const _darkslategray = Color(0x2F4F4F99);
 
 // ─── app root ──────────────────────────────────────────────
 class SophistryApp extends StatelessWidget {
@@ -23,7 +24,7 @@ class SophistryApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
-          colorSchemeSeed: _purple,
+          colorSchemeSeed: _darkslategray,
           textTheme: GoogleFonts.architectsDaughterTextTheme(),
         ),
         home: const SophistryHome(),
@@ -441,8 +442,8 @@ class _SophistryHomeState extends State<SophistryHome> {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 8,
-            backgroundColor: _purpleLight,
-            valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+            backgroundColor: _darkslategray,
+            valueColor: const AlwaysStoppedAnimation<Color>(_green),
           ),
         ),
         const SizedBox(height: 4),
