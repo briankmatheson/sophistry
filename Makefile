@@ -59,6 +59,31 @@ logs-worker:
 status:
 	kubectl get pods -n $(NS)
 
+# ─── tag (auto-bump patch, update manifests, commit, push) ─
+LATEST_TAG := $(shell git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$$' | head -1)
+
+tag:
+	@if [ -z "$(LATEST_TAG)" ]; then \
+		NEXT=0.1.0; \
+	else \
+		MAJOR=$$(echo $(LATEST_TAG) | cut -d. -f1); \
+		MINOR=$$(echo $(LATEST_TAG) | cut -d. -f2); \
+		PATCH=$$(echo $(LATEST_TAG) | cut -d. -f3); \
+		NEXT=$$MAJOR.$$MINOR.$$((PATCH + 1)); \
+	fi; \
+	echo "$(LATEST_TAG) → $$NEXT"; \
+	sed -i "s|image: $(REPO)/sophistry-worker:.*|image: $(REPO)/sophistry-worker:$$NEXT|" deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml deploy/k8s/07-migrate-job.yaml; \
+	sed -i "s|image: $(REPO)/sophistry-web:.*|image: $(REPO)/sophistry-web:$$NEXT|" deploy/k8s/05-web.yaml; \
+	git add -A; \
+	git commit -m "$$NEXT"; \
+	git tag "$$NEXT"; \
+	git push && git push --tags; \
+	echo "🏷️  Tagged $$NEXT"
+
+# ─── release (tag + ship) ────────────────────────────────
+release: tag ship
+	@echo "🚀 Released $(VERSION)!"
+
 # ─── clean ────────────────────────────────────────────────
 clean:
 	$(MAKE) -C backend clean

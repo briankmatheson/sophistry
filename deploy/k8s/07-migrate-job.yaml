@@ -10,7 +10,7 @@ spec:
       containers:
         - name: migrate
           imagePullPolicy: Always
-          image: briankmatheson/sophistry-worker:0.5.4-dirty
+          image: briankmatheson/sophistry-worker:0.5.5-dirty
           envFrom:
             - configMapRef:
                 name: sophistry-config
