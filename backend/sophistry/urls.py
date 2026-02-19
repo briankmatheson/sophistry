@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TestCaseViewSet, RunViewSet, ResultViewSet
-from . import views
+from evals.views import TestCaseViewSet, RunViewSet, ResultViewSet
+from evals import views
 
 router = DefaultRouter()
 router.register(r"api/testcases", TestCaseViewSet)

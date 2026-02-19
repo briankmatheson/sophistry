@@ -62,9 +62,6 @@ class Result(models.Model):
     finished_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
-        unique_together = ("run", "testcase", "provider", "model")
-
 class Participant(models.Model):
     session_id = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
