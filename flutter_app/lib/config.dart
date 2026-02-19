@@ -1,6 +1,7 @@
 class AppConfig {
   static const String backendBaseUrl = String.fromEnvironment(
     'BACKEND_BASE_URL',
-    defaultValue: 'sophistry-worker:8000',
+    defaultValue: 'https://app.sophistry.online',
   );
+  static const int questionsPerSession = 4;
 }
