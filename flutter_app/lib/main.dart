@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'api.dart';
 import 'config.dart';
@@ -50,6 +51,7 @@ class _SophistryHomeState extends State<SophistryHome> {
   Map<String, dynamic>? currentQuestion;
   int questionsAnswered = 0;
   final answerCtl = TextEditingController();
+  final answerFocus = FocusNode();
   bool busy = false;
   String statusLine = '';
 
@@ -73,20 +75,49 @@ class _SophistryHomeState extends State<SophistryHome> {
     final savedRun = getSavedRunUuid();
 
     if (savedRun != null) {
-      // Return visit — try to load review
-      try {
-        final data = await api.getReview(savedRun);
-        setState(() {
-          runUuid = savedRun;
-          reviewData = data;
-          inReview = true;
-          canAddTestcase = true;
-          loading = false;
-        });
-        return;
-      } catch (_) {
-        // Review not available — start fresh
-        clearRunUuid();
+      final savedProgress = getSavedProgress();
+
+      // Completed all questions — try review
+      if (savedProgress >= AppConfig.questionsPerSession) {
+        try {
+          final data = await api.getReview(savedRun);
+          setState(() {
+            runUuid = savedRun;
+            reviewData = data;
+            inReview = true;
+            canAddTestcase = true;
+            loading = false;
+          });
+          return;
+        } catch (_) {
+          // Review endpoint failed — show pending
+          setState(() {
+            runUuid = savedRun;
+            inReview = true;
+            canAddTestcase = true;
+            loading = false;
+            statusLine = 'Scores pending — check back soon';
+          });
+          return;
+        }
+      }
+
+      // Mid-flow — resume question flow
+      if (savedProgress > 0) {
+        try {
+          final q = await api.getQuestion(savedRun);
+          setState(() {
+            runUuid = savedRun;
+            questionsAnswered = savedProgress;
+            currentQuestion = q;
+            loading = false;
+            statusLine = q == null ? 'No more questions' : '';
+          });
+          if (q == null) await _loadReview();
+          return;
+        } catch (_) {
+          // Fall through to new run
+        }
       }
     }
 
@@ -140,6 +171,7 @@ class _SophistryHomeState extends State<SophistryHome> {
 
       questionsAnswered++;
       answerCtl.clear();
+      saveProgress(questionsAnswered);
 
       if (questionsAnswered >= AppConfig.questionsPerSession) {
         // Done — go to review
@@ -152,7 +184,11 @@ class _SophistryHomeState extends State<SophistryHome> {
           busy = false;
           statusLine = q == null ? 'No more questions' : '';
         });
-        if (q == null) await _loadReview();
+        if (q == null) {
+          await _loadReview();
+        } else {
+          answerFocus.requestFocus();
+        }
       }
     } catch (e) {
       setState(() {
@@ -345,13 +381,27 @@ class _SophistryHomeState extends State<SophistryHome> {
           ),
           const SizedBox(height: 12),
           // answer input
-          TextField(
-            controller: answerCtl,
-            enabled: !busy && currentQuestion != null,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Your answer',
-              border: OutlineInputBorder(),
+          KeyboardListener(
+            focusNode: FocusNode(),
+            onKeyEvent: (event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.enter &&
+                  HardwareKeyboard.instance.isControlPressed &&
+                  !busy &&
+                  currentQuestion != null) {
+                _submitAnswer();
+              }
+            },
+            child: TextField(
+              controller: answerCtl,
+              focusNode: answerFocus,
+              autofocus: true,
+              enabled: !busy && currentQuestion != null,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Your answer',
+                border: OutlineInputBorder(),
+              ),
             ),
           ),
           const SizedBox(height: 10),
