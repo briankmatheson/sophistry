@@ -1,13 +1,17 @@
-from django.contrib import admin
 from django.urls import path, include
-from evals.views import home
-from sophistry.views_session import reset_session
-from evals.views_review import review
+from rest_framework.routers import DefaultRouter
+from .views import TestCaseViewSet, RunViewSet, ResultViewSet
+from . import views
+
+router = DefaultRouter()
+router.register(r"api/testcases", TestCaseViewSet)
+router.register(r"api/runs", RunViewSet)
+router.register(r"api/results", ResultViewSet)
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/session/reset/", reset_session, name="session-reset"),
-    path("api/mobile/review/", review, name="mobile-review"),
-    path("", home, name="home"),
-    path("", include("evals.urls")),
+    path("", include(router.urls)),
+    path("api/mobile/run/", views.mobile_create_run),
+    path("api/mobile/question", views.mobile_question),
+    path("api/mobile/answer/", views.mobile_answer),
+    path("api/mobile/testcase/", views.mobile_create_testcase),
 ]
