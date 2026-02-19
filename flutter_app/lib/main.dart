@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'api.dart';
 
 void main() => runApp(const SophistryApp());
+
+
 
 class SophistryApp extends StatelessWidget {
   const SophistryApp({super.key});
@@ -9,7 +12,10 @@ class SophistryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'Sophistry',
-        theme: ThemeData(useMaterial3: true),
+        theme: ThemeData(
+          useMaterial3: true
+          textTheme: GoogleFonts.architectsDaughterTextTheme(),
+        ),
         home: const OneScreen(),
       );
 }

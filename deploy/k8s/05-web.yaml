@@ -15,9 +15,10 @@ spec:
     spec:
       containers:
         - name: web
-          image: briankmatheson/sophistry-web:0.3.0
+          image: briankmatheson/sophistry-web:0.3.2
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 80
           envFrom:
             - configMapRef:
                 name: sophistry-config
@@ -27,7 +28,7 @@ spec:
             - name: ROLE
               value: web
             - name: BACKEND_BASE_URL
-              value: https://worker.sophistry.online
+              value: https://app.sophistry.online/api
 ---
 apiVersion: v1
 kind: Service
@@ -39,4 +40,4 @@ spec:
     app: sophistry-web
   ports:
     - port: 80
-      targetPort: 8000
+      targetPort: 80

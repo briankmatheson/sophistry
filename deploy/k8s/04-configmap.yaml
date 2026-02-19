@@ -4,7 +4,7 @@ metadata:
   name: sophistry-config
   namespace: sophistry
 data:
-  DJANGO_DEBUG: "false"
+  DJANGO_DEBUG: "true"
   DJANGO_ALLOWED_HOSTS: "*"
   PG_WRITER_HOST: "sophistry-pg-rw"
   PG_READER_HOST: "sophistry-pg-ro"

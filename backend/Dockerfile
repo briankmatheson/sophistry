@@ -11,5 +11,6 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
+RUN python manage.py makemigrations
 EXPOSE 8000
 CMD ["bash","-lc","./entrypoint.sh"]

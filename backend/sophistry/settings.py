@@ -6,10 +6,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure")
-DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in ("1","true","yes","y")
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
-
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-supersecure")
+DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in ("1","true","yes","y")
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS",  "*").split(",") if h.strip()]
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -61,7 +60,7 @@ PG_PORT = os.getenv("PG_PORT", "5432")
 
 POSTGRES_DB = os.getenv("POSTGRES_DB", "sophistry")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "sophistry")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "change-me-strong")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "20efaeb8cd301dee66aa15636533693a")
 
 POSTGRES_RO_USER = os.getenv("POSTGRES_RO_USER", "")
 POSTGRES_RO_PASSWORD = os.getenv("POSTGRES_RO_PASSWORD", "")

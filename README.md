@@ -28,7 +28,7 @@ ROLE=worker celery -A sophistry worker -l INFO --concurrency=4
 ```
 
 ### Flutter
-```bash
+    ```bash
 cd flutter_app
 flutter pub get
 flutter run --dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000
