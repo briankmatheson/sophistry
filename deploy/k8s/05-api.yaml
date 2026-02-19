@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sophistry-api
+  namespace: sophistry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sophistry-api
+  template:
+    metadata:
+      labels:
+        app: sophistry-api
+    spec:
+      containers:
+        - name: worker
+          image: briankmatheson/sophistry-worker:0.3.3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: sophistry-config
+            - secretRef:
+                name: sophistry-secrets
+          env:
+            - name: DJANGO_ALLOWED_HOSTS
+              value: "app.sophistry.online,*"
+            - name: ROLE
+              value: web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sophistry-api
+  namespace: sophistry
+spec:
+  selector:
+    app: sophistry-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

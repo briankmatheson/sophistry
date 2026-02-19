@@ -1,17 +1,32 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: sophistry
   namespace: sophistry
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:531572984815:certificate/81f5421b-8bff-4c2c-afaa-7158ed0760ef
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
+  ingressClassName: alb
   rules:
-    - host: sophistry.online
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: sophistry-web
-                port:
-                  number: 80
+  - host: app.sophistry.online
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: sophistry-api
+            port:
+              number: 8000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sophistry-web
+            port:
+              number: 80
