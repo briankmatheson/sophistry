@@ -419,10 +419,6 @@ class _SophistryHomeState extends State<SophistryHome> {
       body: Stack(
         children: [
           // graph paper background
-          Positioned.fill(
-            child: CustomPaint(painter: _GraphPaperPainter()),
-          ),
-          // content
           loading
               ? const Center(child: CircularProgressIndicator())
               : inReview
