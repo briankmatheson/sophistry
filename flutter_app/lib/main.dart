@@ -13,7 +13,7 @@ class SophistryApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         title: 'Sophistry',
         theme: ThemeData(
-          useMaterial3: true
+          useMaterial3: true,
           textTheme: GoogleFonts.architectsDaughterTextTheme(),
         ),
         home: const OneScreen(),

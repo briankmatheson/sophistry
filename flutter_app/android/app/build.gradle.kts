@@ -6,8 +6,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.sophistry"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "online.sophistry.app"
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -4,8 +4,8 @@ set -euo pipefail
 ROLE="${ROLE:-web}"
 
 if [[ "${ROLE}" == "migrate" ]]; then
+  python manage.py makemigrations
   python manage.py migrate
-  python manage.py migrate django_celery_results
   exit 0
 fi
 
