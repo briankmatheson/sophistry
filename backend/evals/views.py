@@ -7,7 +7,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import TestCase, Run, Result
 from .serializers import TestCaseSerializer, RunSerializer, ResultSerializer
+from evals.tasks import score_run
 
+def perform_create(self, serializer):
+    run = serializer.save()
+    score_run.delay(str(run.id))
 
 def home(request):
     return JsonResponse({"ok": True, "service": "sophistry-backend", "version": "0.5.0"})
