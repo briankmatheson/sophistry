@@ -88,3 +88,11 @@ release: tag ship
 clean:
 	$(MAKE) -C backend clean
 	$(MAKE) -C flutter_app clean
+
+# ─── clean ────────────────────────────────────────────────
+apply:
+	kubectl apply -f deploy/k8s/05-api.yaml
+	kubectl apply -f deploy/k8s/05-web.yaml
+	kubectl apply -f deploy/k8s/06-worker.yaml
+	kubectl delete -f deploy/k8s/07-migrate-job.yaml && kubectl create -f deploy/k8s/07-migrate-job.yaml
+	kubectl rollout restart deploy -n sophistry

@@ -551,11 +551,11 @@ class _SophistryHomeState extends State<SophistryHome> {
             // score comparison row
             Row(
               children: [
-                Expanded(child: _scoreColumn('You', r['user_score'], userClass, _purple)),
+                Expanded(child: _scoreColumn('You', r['user_score'], userClass, _green)),
                 const SizedBox(width: 8),
                 Expanded(child: _scoreColumn('Claude', r['claude_score'], claudeClass, _amber)),
                 const SizedBox(width: 8),
-                Expanded(child: _scoreColumn('Avg Human', r['human_avg_score'], avgClass, _green)),
+                Expanded(child: _scoreColumn('Avg Human', r['human_avg_score'], avgClass, _purple)),
               ],
             ),
           ],
