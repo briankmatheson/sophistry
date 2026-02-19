@@ -2,19 +2,19 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import TestCaseViewSet, RunViewSet, ResultViewSet
 from . import views
+from .views_review import review
 
 router = DefaultRouter()
 router.register(r"api/testcases", TestCaseViewSet)
 router.register(r"api/runs", RunViewSet)
 router.register(r"api/results", ResultViewSet)
 
-from .views import mobile_results
-
 urlpatterns = [
     path("", include(router.urls)),
     path("api/mobile/run/", views.mobile_create_run),
     path("api/mobile/question", views.mobile_question),
     path("api/mobile/answer/", views.mobile_answer),
+    path("api/mobile/preview_score/", views.mobile_preview_score),
     path("api/mobile/testcase/", views.mobile_create_testcase),
-    path('mobile/results', mobile_results),
+    path("api/mobile/review/", review),
 ]

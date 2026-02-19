@@ -1,53 +1,55 @@
+"""Scoring entrypoint.
 
-import re
+Sophistry v0.5.x used rubric/regex scoring.
 
-BANDS = ["FLUENCY", "BELIEF", "REASONING", "UNDERSTANDING"]
+Sophistry v0.6+ (this bundle) uses **structural scoring** as the primary score:
+how well an answer *structurally matches* the prompt.
 
-def score_answer(testcase, answer_text) -> dict:
-    rubric = testcase.expected or {}
-    must_have = rubric.get("must_have", [])
-    nice_to_have = rubric.get("nice_to_have", [])
-    penalties = rubric.get("penalties", [])
+Correctness scoring (rubrics / model judges) can be layered later.
+"""
 
-    raw_points = 0
-    matched = []
-    missed = []
-    penalty_hits = []
+from __future__ import annotations
 
-    # must_have scoring
-    for item in must_have:
-        pattern = item.get("pattern")
-        points = item.get("points", 1)
-        if pattern and re.search(pattern, answer_text, re.IGNORECASE):
-            raw_points += points
-            matched.append(pattern)
-        else:
-            missed.append(pattern)
+from .structural import score_structural
 
-    # nice_to_have scoring
-    for item in nice_to_have:
-        pattern = item.get("pattern")
-        points = item.get("points", 1)
-        if pattern and re.search(pattern, answer_text, re.IGNORECASE):
-            raw_points += points
-            matched.append(pattern)
 
-    # penalties
-    for item in penalties:
-        pattern = item.get("pattern")
-        points = item.get("points", 1)
-        if pattern and re.search(pattern, answer_text, re.IGNORECASE):
-            raw_points -= points
-            penalty_hits.append(pattern)
+def score_answer(testcase, answer_text: str) -> dict:
+    """Return a structured verdict for an answer.
 
-    band = rubric.get("band", "REASONING")
-    if band not in BANDS:
-        band = "REASONING"
+    The returned dict is intended to be stored in Result.score_details.
+    """
+    expected = testcase.expected or {}
+    validation = expected.get("validation") if isinstance(expected, dict) else None
+
+    # Defaults for Sophistry sessions: long-form answers
+    min_words = 100
+    min_sentences = 3
+
+    if isinstance(validation, dict):
+        min_words = int(validation.get("min_words") or min_words)
+        min_sentences = int(validation.get("min_sentences") or min_sentences)
+
+    v = score_structural(
+        testcase.prompt,
+        answer_text,
+        min_words=min_words,
+        min_sentences=min_sentences,
+    )
+
+    wc = int(v.signals.get("word_count", 0) or 0)
+    sc = int(v.signals.get("sentence_count", 0) or 0)
+    val_ok = (wc >= min_words) and (sc >= min_sentences)
 
     return {
-        "raw_points": raw_points,
-        "band": band,
-        "matched": matched,
-        "missed": missed,
-        "penalties": penalty_hits,
+        "score_0_100": v.score_0_100,
+        "band": v.band,
+        "signals": v.signals,
+        "notes": v.notes,
+        "validation": {
+            "min_words": min_words,
+            "min_sentences": min_sentences,
+            "word_count": wc,
+            "sentence_count": sc,
+            "ok": val_ok,
+        },
     }

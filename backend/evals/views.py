@@ -14,7 +14,7 @@ def perform_create(self, serializer):
     score_run.delay(str(run.id))
 
 def home(request):
-    return JsonResponse({"ok": True, "service": "sophistry-backend", "version": "0.5.0"})
+    return JsonResponse({"ok": True, "service": "sophistry-backend", "version": "0.6.0"})
 
 
 class TestCaseViewSet(viewsets.ModelViewSet):
@@ -82,7 +82,10 @@ def mobile_question(request):
 def mobile_answer(request):
     run_uuid = request.data.get("run_uuid")
     testcase_id = request.data.get("testcase_id")
-    answer = request.data.get("answer", "")
+    # Back-compat: clients may send either "answer" or "output_text"
+    answer = request.data.get("answer")
+    if answer is None:
+        answer = request.data.get("output_text", "")
 
     if not run_uuid or not testcase_id:
         return response.Response(
@@ -92,9 +95,9 @@ def mobile_answer(request):
     run = Run.objects.get(run_uuid=run_uuid)
     tc = TestCase.objects.get(id=testcase_id)
 
-    # Score the answer
+    # Structural scoring (primary)
     score_result = score_answer(tc, answer)
-    normalized_score = _normalize_score(tc, answer, score_result)
+    normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
 
     r = Result.objects.create(
         run=run,
@@ -123,6 +126,34 @@ def mobile_answer(request):
 
 
 @decorators.api_view(["POST"])
+def mobile_preview_score(request):
+    """Preview structural score without creating a Result."""
+    testcase_id = request.data.get("testcase_id")
+    answer = request.data.get("answer")
+    if answer is None:
+        answer = request.data.get("output_text", "")
+
+    if not testcase_id:
+        return response.Response({"detail": "testcase_id required"}, status=400)
+
+    try:
+        tc = TestCase.objects.get(id=testcase_id)
+    except TestCase.DoesNotExist:
+        return response.Response({"detail": "unknown testcase_id"}, status=404)
+
+    score_result = score_answer(tc, answer)
+    normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
+
+    return response.Response(
+        {
+            "ok": True,
+            "score": normalized_score,
+            "score_details": score_result,
+        }
+    )
+
+
+@decorators.api_view(["POST"])
 def mobile_create_testcase(request):
     slug = request.data.get("slug")
     prompt = request.data.get("prompt")
@@ -135,24 +166,5 @@ def mobile_create_testcase(request):
 
 
 def _normalize_score(tc, answer_text, score_result):
-    """Normalize raw points to 0.0-1.0 range."""
-    rubric = tc.expected or {}
-    must_have = rubric.get("must_have", [])
-    nice_to_have = rubric.get("nice_to_have", [])
-
-    max_points = sum(item.get("points", 1) for item in must_have)
-    max_points += sum(item.get("points", 1) for item in nice_to_have)
-
-    if max_points == 0:
-        # Legacy format — simple keyword match against "answer" field
-        answer_key = rubric.get("answer", "")
-        if not answer_key:
-            return None
-        keywords = [w.strip().lower() for w in answer_key.split() if len(w) > 3]
-        if not keywords:
-            return None
-        matches = sum(1 for kw in keywords if kw in answer_text.lower())
-        return round(matches / len(keywords), 2)
-
-    raw = score_result.get("raw_points", 0)
-    return round(max(0.0, min(1.0, raw / max_points)), 2)
+    """Deprecated (rubric scoring). Kept for any legacy callsites."""
+    return round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)

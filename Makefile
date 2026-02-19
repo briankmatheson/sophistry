@@ -90,7 +90,7 @@ clean:
 	$(MAKE) -C flutter_app clean
 
 # ─── clean ────────────────────────────────────────────────
-roll:
+apply:
 	kubectl apply -f deploy/k8s/05-api.yaml
 	kubectl apply -f deploy/k8s/05-web.yaml
 	kubectl apply -f deploy/k8s/06-worker.yaml

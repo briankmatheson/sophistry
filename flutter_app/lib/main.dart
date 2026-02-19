@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 import 'api.dart';
 import 'config.dart';
 import 'session.dart';
@@ -13,6 +14,38 @@ const _purpleLight = Color(0xFFEDE7F6);
 const _green = Color(0xFF4CAF50);
 const _amber = Color(0xFFFFA726);
 const _darkslategray = Color(0x2F4F4F99);
+
+// ─── Dial tooltips (F / B / R / U) ───────────────────────
+class DialBandInfo {
+  final String label;
+  final String title;
+  final String description;
+
+  const DialBandInfo(this.label, this.title, this.description);
+}
+
+const _bandInfo = [
+  DialBandInfo(
+    'F',
+    'Fluency',
+    'Text exists but does not structurally address the question. Often generic, evasive, or off-topic.',
+  ),
+  DialBandInfo(
+    'B',
+    'Belief',
+    'Matches the expected shape of an answer (definition/explanation), but may be shallow or incomplete.',
+  ),
+  DialBandInfo(
+    'R',
+    'Reasoning',
+    'Shows structured explanation with causal links and multi-step logic tied to the prompt.',
+  ),
+  DialBandInfo(
+    'U',
+    'Understanding',
+    'Fully aligned structure with distinctions, constraints, and conceptual clarity.',
+  ),
+];
 
 // ─── app root ──────────────────────────────────────────────
 class SophistryApp extends StatelessWidget {
@@ -567,6 +600,9 @@ class _SophistryHomeState extends State<SophistryHome> {
   Widget _scoreColumn(
       String label, dynamic score, Map<String, dynamic>? classification, Color color) {
     final scoreVal = score != null ? (score as num).toDouble() : null;
+    final dialScore = scoreVal == null
+        ? null
+        : (scoreVal <= 1.5 ? (scoreVal * 100.0) : (scoreVal <= 100.0 ? scoreVal : 100.0));
     final icon = classification?['icon'] ?? '—';
     final level = classification?['level'] ?? 'Pending';
 
@@ -583,8 +619,11 @@ class _SophistryHomeState extends State<SophistryHome> {
               style: TextStyle(
                   fontSize: 10, fontWeight: FontWeight.w600, color: color)),
           const SizedBox(height: 4),
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 2),
+          if (dialScore != null)
+            SophistryDial(score: dialScore!, size: const Size(120, 66))
+          else
+            Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 6),
           Text(
             level,
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
@@ -592,7 +631,7 @@ class _SophistryHomeState extends State<SophistryHome> {
           if (scoreVal != null) ...[
             const SizedBox(height: 2),
             Text(
-              scoreVal.toStringAsFixed(2),
+              dialScore!.round().toString(),
               style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           ] else
@@ -625,6 +664,202 @@ class _SophistryHomeState extends State<SophistryHome> {
       ],
     );
   }
+}
+
+// ─── Sophistry Dial (instrument-style) ────────────────────
+class SophistryDial extends StatelessWidget {
+  final double score; // expected 0..100
+  final Size size;
+
+  const SophistryDial({
+    super.key,
+    required this.score,
+    this.size = const Size(140, 78),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = score.clamp(0.0, 100.0);
+    final angleDeg = (clamped / 100.0) * 180.0 - 90.0;
+    final angleRad = angleDeg * math.pi / 180.0;
+
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          CustomPaint(
+            size: size,
+            painter: _DialPainter(),
+          ),
+          DialLabelOverlay(
+            size: size,
+            thresholds: const [0, 40, 70, 90],
+          ),
+          Positioned(
+            bottom: 10,
+            child: _Needle(angleRad: angleRad),
+          ),
+          Positioned(
+            bottom: 4,
+            child: _Hub(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DialLabelOverlay extends StatelessWidget {
+  final Size size;
+  final List<int> thresholds; // [0, 40, 70, 90]
+
+  const DialLabelOverlay({
+    super.key,
+    required this.size,
+    required this.thresholds,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final w = size.width;
+    final h = size.height;
+    final center = Offset(w / 2, h);
+    final radius = math.min(w / 2, h) - 6;
+
+    Offset anchorFor(int t) {
+      final a = (t / 100.0) * math.pi;
+      final ang = math.pi + a;
+      final r = radius - 22;
+      return Offset(
+        center.dx + r * math.cos(ang),
+        center.dy + r * math.sin(ang),
+      );
+    }
+
+    return Stack(
+      children: List.generate(_bandInfo.length, (i) {
+        final pos = anchorFor(thresholds[i]);
+        return Positioned(
+          left: pos.dx - 14,
+          top: pos.dy - 14,
+          child: Tooltip(
+            triggerMode: TooltipTriggerMode.tap,
+            showDuration: const Duration(seconds: 4),
+            message: "${_bandInfo[i].title}\n\n${_bandInfo[i].description}",
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: Center(
+                child: Text(
+                  _bandInfo[i].label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black.withOpacity(0.65),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _Needle extends StatelessWidget {
+  final double angleRad;
+  const _Needle({required this.angleRad});
+
+  @override
+  Widget build(BuildContext context) {
+    final needle = SizedBox(
+      width: 6,
+      height: sizeForNeedle(context),
+      child: CustomPaint(painter: _NeedlePainter()),
+    );
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: -math.pi / 2, end: angleRad),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+      builder: (_, a, child) => Transform.rotate(angle: a, child: child),
+      child: needle,
+    );
+  }
+
+  double sizeForNeedle(BuildContext context) => 50;
+}
+
+class _NeedlePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.black.withOpacity(0.85);
+    final path = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _Hub extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.black.withOpacity(0.85),
+      ),
+    );
+  }
+}
+
+class _DialPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height);
+    final radius = math.min(size.width / 2, size.height) - 6;
+
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
+      ..color = Colors.black.withOpacity(0.18);
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawArc(rect, math.pi, math.pi, false, arcPaint);
+
+    final tickPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..color = Colors.black.withOpacity(0.45);
+
+    for (final t in [0, 40, 70, 90, 100]) {
+      final a = (t / 100.0) * math.pi;
+      final ang = math.pi + a;
+      final p1 = Offset(
+        center.dx + (radius - 1) * math.cos(ang),
+        center.dy + (radius - 1) * math.sin(ang),
+      );
+      final p2 = Offset(
+        center.dx + (radius - 10) * math.cos(ang),
+        center.dy + (radius - 10) * math.sin(ang),
+      );
+      canvas.drawLine(p1, p2, tickPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─── GRAPH PAPER BACKGROUND ─────────────────────────────
