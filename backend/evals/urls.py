@@ -8,10 +8,13 @@ router.register(r"api/testcases", TestCaseViewSet)
 router.register(r"api/runs", RunViewSet)
 router.register(r"api/results", ResultViewSet)
 
+from .views import mobile_results
+
 urlpatterns = [
     path("", include(router.urls)),
     path("api/mobile/run/", views.mobile_create_run),
     path("api/mobile/question", views.mobile_question),
     path("api/mobile/answer/", views.mobile_answer),
     path("api/mobile/testcase/", views.mobile_create_testcase),
+    path('mobile/results', mobile_results),
 ]

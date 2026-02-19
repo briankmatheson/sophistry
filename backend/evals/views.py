@@ -1,3 +1,4 @@
+from .scoring import score_answer
 import random
 from django.http import JsonResponse
 from rest_framework import decorators, response, status, viewsets
@@ -82,3 +83,42 @@ def mobile_create_testcase(request):
 
     tc = TestCase.objects.create(slug=slug, title=title, prompt=prompt, is_active=False)
     return response.Response({"ok": True, "testcase_id": tc.id, "is_active": tc.is_active})
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Result
+
+@api_view(["GET"])
+def mobile_results(request):
+    run_uuid = request.GET.get("run_uuid")
+    testcase_id = request.GET.get("testcase_id")
+
+    results = Result.objects.filter(run_uuid=run_uuid, testcase_id=testcase_id)
+
+    grouped = {
+        "me": [],
+        "claude": [],
+        "humans": [],
+        "other": []
+    }
+
+    for r in results:
+        provider = (r.provider or "").lower()
+        entry = {
+            "id": r.id,
+            "score": r.score,
+            "score_details": r.score_details,
+            "provider": r.provider
+        }
+
+        if provider == "me":
+            grouped["me"].append(entry)
+        elif "claude" in provider:
+            grouped["claude"].append(entry)
+        elif provider == "human":
+            grouped["humans"].append(entry)
+        else:
+            grouped["other"].append(entry)
+
+    return Response(grouped)
