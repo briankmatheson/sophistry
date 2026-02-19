@@ -641,18 +641,6 @@ class _GraphPaperPainter extends CustomPainter {
     for (double y = 0; y <= size.height; y += 12) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), thinPaint);
     }
-
-    // Thick grid lines (60px)
-    final thickPaint = Paint()
-      ..color = const Color(0x1A000000) // ~10% opacity
-      ..strokeWidth = 0.8;
-
-    for (double x = 0; x <= size.width; x += 60) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), thickPaint);
-    }
-    for (double y = 0; y <= size.height; y += 60) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), thickPaint);
-    }
   }
 
   @override
