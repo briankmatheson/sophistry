@@ -311,6 +311,7 @@ class _SophistryHomeState extends State<SophistryHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFBFBF8),
       appBar: AppBar(
         title: const Text('Sophistry'),
         actions: [
@@ -326,11 +327,20 @@ class _SophistryHomeState extends State<SophistryHome> {
           ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : inReview
-              ? _buildReview()
-              : _buildQuestionFlow(),
+      body: Stack(
+        children: [
+          // graph paper background
+          Positioned.fill(
+            child: CustomPaint(painter: _GraphPaperPainter()),
+          ),
+          // content
+          loading
+              ? const Center(child: CircularProgressIndicator())
+              : inReview
+                  ? _buildReview()
+                  : _buildQuestionFlow(),
+        ],
+      ),
     );
   }
 
@@ -347,6 +357,7 @@ class _SophistryHomeState extends State<SophistryHome> {
           Expanded(
             child: Card(
               elevation: 2,
+              color: Colors.white.withOpacity(0.85),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: currentQuestion == null
@@ -613,4 +624,37 @@ class _SophistryHomeState extends State<SophistryHome> {
       ],
     );
   }
+}
+
+// ─── GRAPH PAPER BACKGROUND ─────────────────────────────
+class _GraphPaperPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Thin grid lines (12px)
+    final thinPaint = Paint()
+      ..color = const Color(0x0F000000) // ~6% opacity
+      ..strokeWidth = 0.5;
+
+    for (double x = 0; x <= size.width; x += 12) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), thinPaint);
+    }
+    for (double y = 0; y <= size.height; y += 12) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), thinPaint);
+    }
+
+    // Thick grid lines (60px)
+    final thickPaint = Paint()
+      ..color = const Color(0x1A000000) // ~10% opacity
+      ..strokeWidth = 0.8;
+
+    for (double x = 0; x <= size.width; x += 60) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), thickPaint);
+    }
+    for (double y = 0; y <= size.height; y += 60) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), thickPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
