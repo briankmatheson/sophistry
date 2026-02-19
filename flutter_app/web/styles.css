@@ -1,0 +1,35 @@
+.graph-paper {
+  /* Base background */
+  background-color: #fbfbf8;
+
+  /* Two layers: thin grid + thick grid */
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(0,0,0,0.10) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.10) 1px, transparent 1px);
+
+  /* thin cell size, thick cell size */
+  background-size:
+    12px 12px,
+    12px 12px,
+    60px 60px,
+    60px 60px;
+
+  /* align layers */
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 0;
+}
+
+/* Optional: soften behind content so cards pop */
+.graph-paper .card,
+.graph-paper .panel,
+.graph-paper main {
+  background: rgba(255,255,255,0.80);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+}
