@@ -3,6 +3,7 @@ import 'dart:html' as html;
 
 const String kCookieName = 'sophistry_session';
 const String kRunUuidCookie = 'sophistry_run_uuid';
+const String kProgressCookie = 'sophistry_progress';
 
 /// Read the session UUID from cookie
 String? getSessionId() {
@@ -23,6 +24,20 @@ void saveRunUuid(String runUuid) {
 /// Clear run UUID cookie
 void clearRunUuid() {
   html.document.cookie = '$kRunUuidCookie=; path=/; max-age=0';
+  html.document.cookie = '$kProgressCookie=; path=/; max-age=0';
+}
+
+/// Save questions-answered count
+void saveProgress(int count) {
+  html.document.cookie =
+      '$kProgressCookie=$count; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax';
+}
+
+/// Read questions-answered count
+int getSavedProgress() {
+  final val = _readCookie(kProgressCookie);
+  if (val == null) return 0;
+  return int.tryParse(val) ?? 0;
 }
 
 /// Reload the page (web only)
