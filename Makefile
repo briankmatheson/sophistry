@@ -12,7 +12,7 @@ VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev
 
 export VERSION REPO NS
 
-.PHONY: build push deploy migrate seed ship clean version
+.PHONY: build push deploy migrate seed ship clean version apply roll
 
 version:
 	@echo $(VERSION)
@@ -87,12 +87,14 @@ release: tag ship
 # ─── clean ────────────────────────────────────────────────
 clean:
 	$(MAKE) -C backend clean
-	$(MAKE) -C flutter_app clean
+	$(MAKE) -C anaflutter_app clean
 
-# ─── clean ────────────────────────────────────────────────
+# ─── apply ────────────────────────────────────────────────
 apply:
 	kubectl apply -f deploy/k8s/05-api.yaml
 	kubectl apply -f deploy/k8s/05-web.yaml
 	kubectl apply -f deploy/k8s/06-worker.yaml
 	kubectl delete -f deploy/k8s/07-migrate-job.yaml && kubectl create -f deploy/k8s/07-migrate-job.yaml
 	kubectl rollout restart deploy -n sophistry
+# ─── roll ────────────────────────────────────────────────
+roll: release apply 
