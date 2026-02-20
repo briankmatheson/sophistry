@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "phlogiston",
+    "title": "Phlogiston",
+    "prompt": "What is phlogiston?",
+    "expected": {"answer": "an old theory of heat transfer"},
+    "tags": ["science", "medium", "disproven"],
+    "is_active": true
+  },
+  {
+    "slug": "quark",
+    "title": "Quark",
+    "prompt": "What is a quark?",
+    "expected": {"answer": "subatomic constituent of matter"},
+    "tags": ["science", "easy"],
+    "is_active": true
+  },
+  {
+    "slug": "trolley-problem",
+    "title": "Trolley Problem",
+    "prompt": "Describe the trolley problem and its implications for ethics.",
+    "expected": {"answer": "a thought experiment contrasting utilitarian and deontological ethics"},
+    "tags": ["philosophy", "medium", "ethics"],
+    "is_active": true
+  },
+  {
+    "slug": "halting-problem",
+    "title": "Halting Problem",
+    "prompt": "What is the halting problem and why is it important?",
+    "expected": {"answer": "it is undecidable whether an arbitrary program will halt"},
+    "tags": ["cs", "hard", "computability"],
+    "is_active": true
+  },
+  {
+    "slug": "luminiferous-aether",
+    "title": "Luminiferous Aether",
+    "prompt": "What was the luminiferous aether and why was it abandoned?",
+    "expected": {"answer": "a hypothetical medium for light propagation, undermined by experiments such as Michelson–Morley"},
+    "tags": ["science", "medium", "disproven"],
+    "is_active": true
+  },
+  {
+    "slug": "p-vs-np",
+    "title": "P vs NP",
+    "prompt": "Explain the P vs NP problem in simple terms.",
+    "expected": {"answer": "whether problems that are easy to verify are also easy to solve"},
+    "tags": ["cs", "hard", "open-problems"],
+    "is_active": true
+  },
+  {
+    "slug": "ship-of-theseus",
+    "title": "Ship of Theseus",
+    "prompt": "What is the Ship of Theseus paradox?",
+    "expected": {"answer": "if all parts are replaced over time, is it still the same object"},
+    "tags": ["philosophy", "easy", "identity"],
+    "is_active": true
+  },
+  {
+    "slug": "spontaneous-generation",
+    "title": "Spontaneous Generation",
+    "prompt": "What was the theory of spontaneous generation?",
+    "expected": {"answer": "the idea that life arises from non-living matter, later refuted by experiments such as Pasteur's"},
+    "tags": ["science", "easy", "disproven"],
+    "is_active": true
+  },
+  {
+    "slug": "monty-hall",
+    "title": "Monty Hall Problem",
+    "prompt": "Explain the Monty Hall problem. Should you switch doors?",
+    "expected": {"answer": "yes — switching gives a 2/3 probability of winning"},
+    "tags": ["math", "medium", "probability"],
+    "is_active": true
+  },
+  {
+    "slug": "chinese-room",
+    "title": "Chinese Room",
+    "prompt": "What is Searle's Chinese Room argument?",
+    "expected": {"answer": "manipulating symbols according to rules does not constitute understanding"},
+    "tags": ["philosophy", "hard", "ai", "consciousness"],
+    "is_active": true
+  },
+  {
+    "slug": "fermi-paradox",
+    "title": "Fermi Paradox",
+    "prompt": "What is the Fermi paradox?",
+    "expected": {"answer": "the tension between the high likelihood of extraterrestrial civilizations and the lack of evidence"},
+    "tags": ["science", "medium", "space"],
+    "is_active": true
+  }
+]

@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sophistry-seed-testcases
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seed
+          image: briankmatheson/sophistry-backend:latest
+          imagePullPolicy: Always
+          command: ["sh","-lc"]
+          args:
+            - |
+              python manage.py migrate --noinput
+              python manage.py seed_testcases --allow-prod
+          envFrom:
+            - secretRef:
+                name: sophistry-secrets
