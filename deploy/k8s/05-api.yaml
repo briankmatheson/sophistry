@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: briankmatheson/sophistry-worker:0.6.18
+          image: briankmatheson/sophistry-worker:0.6.19
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
