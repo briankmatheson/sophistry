@@ -13,7 +13,7 @@ from __future__ import annotations
 from .structural import score_structural
 from .structural_scoring import load_vocab, score_structural_alignment
 
-VOCAB = load_vocab("/path/to/structural_vocab.yaml")
+VOCAB = load_vocab("./evals/structural_vocab.yaml")
 
 def score_case(prompt: str, model_answer: str) -> dict:
     structural = score_structural_alignment(prompt, model_answer, VOCAB)
