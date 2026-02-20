@@ -103,6 +103,7 @@ class _SophistryHomeState extends State<SophistryHome> {
   Map<String, dynamic>? previewResult;
   Timer? _previewTimer;
   String? _lastPreviewText;
+  int _wordCount = 0;
 
   // version info
   String backendVersion = '…';
@@ -128,6 +129,14 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   void _onAnswerChanged() {
     final text = answerCtl.text.trim();
+
+    // Word count updates immediately on every keystroke
+    final wc = text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
+    if (wc != _wordCount) {
+      setState(() => _wordCount = wc);
+    }
+
+    // Preview scoring is debounced
     if (text == _lastPreviewText) return;
     _lastPreviewText = text;
 
@@ -267,6 +276,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       answerCtl.clear();
       _previewTimer?.cancel();
       _lastPreviewText = null;
+      _wordCount = 0;
       previewResult = null;
       saveProgress(questionsAnswered);
 
@@ -542,22 +552,30 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Widget _progressBar() {
-    final progress = questionsAnswered / AppConfig.questionsPerSession;
+    const minWords = 100;
+    const maxDisplay = 110; // 110% scale
+    final pct = (_wordCount / minWords).clamp(0.0, maxDisplay / 100.0);
+    final barValue = (pct * 100.0 / (maxDisplay / 100.0)).clamp(0.0, 100.0) / 100.0;
+    final met = _wordCount >= minWords;
+
     return Column(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
-            value: progress,
+            value: barValue,
             minHeight: 8,
             backgroundColor: _darkslategray,
-            valueColor: const AlwaysStoppedAnimation<Color>(_green),
+            valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _purple),
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          '$questionsAnswered of ${AppConfig.questionsPerSession} answered',
-          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+          '$_wordCount / $minWords words${met ? " ✓" : ""}',
+          style: TextStyle(
+            fontSize: 11,
+            color: met ? _green : Colors.grey[600],
+          ),
         ),
       ],
     );
@@ -569,9 +587,6 @@ class _SophistryHomeState extends State<SophistryHome> {
     final score0100 = (details['score_0_100'] as num?)?.toDouble() ?? 0;
     final band = details['band'] as String? ?? '';
     final notes = (details['notes'] as List<dynamic>?)?.cast<String>() ?? [];
-    final validation = details['validation'] as Map<String, dynamic>? ?? {};
-    final wc = validation['word_count'] as int? ?? 0;
-    final minWords = validation['min_words'] as int? ?? 100;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 250),
@@ -587,10 +602,10 @@ class _SophistryHomeState extends State<SophistryHome> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // mini dial
+            // structural similarity dial
             SophistryDial(score: score0100, size: const Size(80, 44)),
             const SizedBox(width: 12),
-            // notes + word count
+            // band + coaching notes
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,15 +616,6 @@ class _SophistryHomeState extends State<SophistryHome> {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: _purple.withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  // word count indicator
-                  Text(
-                    '$wc / $minWords words',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: wc >= minWords ? _green : Colors.grey[500],
                     ),
                   ),
                   if (notes.isNotEmpty) ...[
