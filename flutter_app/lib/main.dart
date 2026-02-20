@@ -1119,7 +1119,15 @@ class DialLabelOverlay extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black.withOpacity(0.65),
+                    // Designed to sit on a dark, instrument-style dial.
+                    color: Colors.white.withOpacity(0.88),
+                    shadows: const [
+                      Shadow(
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                        color: Color(0xAA000000),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1158,13 +1166,24 @@ class _Needle extends StatelessWidget {
 class _NeedlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.85);
-    final path = Path()
-      ..moveTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
+    // A crisp, instrument-style needle: red with a subtle shadow.
+    final shadowPaint = Paint()..color = const Color(0x66000000);
+    final needlePaint = Paint()..color = const Color(0xFFE53935);
+
+    final cx = size.width / 2;
+
+    final needlePath = Path()
+      ..moveTo(cx, 0)
+      ..lineTo(cx + 1.6, size.height)
+      ..lineTo(cx - 1.6, size.height)
       ..close();
-    canvas.drawPath(path, paint);
+
+    canvas.save();
+    canvas.translate(0, 1);
+    canvas.drawPath(needlePath, shadowPaint);
+    canvas.restore();
+
+    canvas.drawPath(needlePath, needlePaint);
   }
 
   @override
@@ -1175,11 +1194,19 @@ class _Hub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 10,
-      height: 10,
+      width: 12,
+      height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.black.withOpacity(0.85),
+        color: const Color(0xFF0B0B0B),
+        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
       ),
     );
   }
@@ -1188,6 +1215,14 @@ class _Hub extends StatelessWidget {
 class _DialPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // Instrument panel background (dark, high-contrast)
+    final bg = Paint()..color = const Color(0xFF0B0B0B);
+    final panel = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(panel, bg);
+
     final center = Offset(size.width / 2, size.height);
     final radius = math.min(size.width / 2, size.height) - 6;
 
@@ -1195,29 +1230,67 @@ class _DialPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round
-      ..color = Colors.black.withOpacity(0.18);
+      ..color = const Color(0xFF1A1A1A);
 
     final rect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawArc(rect, math.pi, math.pi, false, arcPaint);
 
-    final tickPaint = Paint()
+    // Red zone overlay (high scores)
+    final redZonePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..color = Colors.black.withOpacity(0.45);
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xFF4A0B0B);
+    // 80..100 mapped onto 180deg sweep
+    final startA = math.pi + (80 / 100.0) * math.pi;
+    final sweepA = (20 / 100.0) * math.pi;
+    canvas.drawArc(rect, startA, sweepA, false, redZonePaint);
 
-    for (final t in [0, 40, 70, 90, 100]) {
+    // Ticks: minor/major with high contrast
+    for (int t = 0; t <= 100; t += 5) {
+      final isMajor = (t % 20 == 0);
+      final isMedium = (!isMajor && (t % 10 == 0));
+
+      final tickLen = isMajor
+          ? 14.0
+          : isMedium
+              ? 10.0
+              : 7.0;
+      final tickW = isMajor
+          ? 2.2
+          : isMedium
+              ? 1.6
+              : 1.1;
+
       final a = (t / 100.0) * math.pi;
       final ang = math.pi + a;
-      final p1 = Offset(
-        center.dx + (radius - 1) * math.cos(ang),
-        center.dy + (radius - 1) * math.sin(ang),
+      final pOuter = Offset(
+        center.dx + (radius - 0.5) * math.cos(ang),
+        center.dy + (radius - 0.5) * math.sin(ang),
       );
-      final p2 = Offset(
-        center.dx + (radius - 10) * math.cos(ang),
-        center.dy + (radius - 10) * math.sin(ang),
+      final pInner = Offset(
+        center.dx + (radius - tickLen) * math.cos(ang),
+        center.dy + (radius - tickLen) * math.sin(ang),
       );
-      canvas.drawLine(p1, p2, tickPaint);
+
+      final inRedZone = (t >= 80);
+      final tickPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = tickW
+        ..strokeCap = StrokeCap.round
+        ..color = inRedZone ? const Color(0xFFE53935) : Colors.white;
+
+      canvas.drawLine(pOuter, pInner, tickPaint);
     }
+
+    // A faint inner arc highlight for depth
+    final innerArcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..color = Colors.white.withOpacity(0.08);
+    final innerRect = Rect.fromCircle(center: center, radius: radius - 6);
+    canvas.drawArc(innerRect, math.pi, math.pi, false, innerArcPaint);
   }
 
   @override
