@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Dict, List
-from .structural_scoring import infer_structural_vector, score_structural_alignment detect_flags 
+from .structural_scoring import infer_structural_vector, score_structural_alignment, detect_flags 
 
 
 
