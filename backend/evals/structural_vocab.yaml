@@ -1,0 +1,234 @@
+version: 1
+
+domains:
+  physics:
+    - quantum
+    - wavefunction
+    - superposition
+    - entanglement
+    - decoherence
+    - tunneling
+    - photon
+    - electron
+    - uncertainty
+    - double-slit
+    - field
+    - excitation
+    - amplitude
+    - hilbert
+    - operator
+  chemistry:
+    - combustion
+    - oxidation
+    - oxygen
+    - reaction
+    - metal
+    - rust
+    - mass
+    - balance
+    - gas
+    - ash
+    - residue
+  history_of_science:
+    - lavoisier
+    - phlogiston
+    - early chemists
+    - historical
+    - replaced
+    - decades
+    - discovery
+    - theory persisted
+    - measurement techniques
+  biology:
+    - evolution
+    - fitness
+    - genes
+    - inherited
+    - selection
+    - reproduction
+    - kin
+    - relatives
+    - altruism
+    - adaptation
+  social_science:
+    - society
+    - culture
+    - institutions
+    - norms
+    - cooperation
+    - competition
+    - group
+    - loyalty
+    - controversy
+    - motivation
+    - social behavior
+  philosophy_of_science:
+    - interpretation
+    - reality
+    - measurement problem
+    - explain
+    - epistemology
+    - ontology
+    - falsifiable
+    - model
+    - theory
+    - concept
+
+intent_markers:
+  define:
+    - "^what is\\b"
+    - "^define\\b"
+    - "in simple terms\\b.*what (is|does)\\b"
+  explain_mechanism:
+    - "\\bhow does\\b"
+    - "\\bhow can\\b"
+    - "\\bexplain how\\b"
+    - "\\bmechanism\\b"
+    - "\\bworks in\\b"
+  describe_process:
+    - "\\bdescribe\\b"
+    - "\\bwhat happens\\b"
+    - "\\bprocess\\b"
+    - "\\bsteps\\b"
+  compare_contrast:
+    - "\\bcompare\\b"
+    - "\\bcontrast\\b"
+    - "\\bdifference\\b"
+    - "\\bsimilar\\b"
+  evaluate_claim:
+    - "\\bwhy is\\b.*\\bcontroversial\\b"
+    - "\\bcritic\\b"
+    - "\\bsupporter\\b"
+    - "\\bdebate\\b"
+    - "\\bargue\\b"
+    - "\\bstrengths\\b|\\bweaknesses\\b"
+  analyze_limits:
+    - "\\blimit\\b"
+    - "\\bedge case\\b"
+    - "\\bboundary\\b"
+    - "\\bextreme\\b"
+    - "\\bhypothetical\\b"
+    - "\\bperfectly\\b.*\\bisolated\\b"
+    - "\\bat zero temperature\\b"
+  interpret_evidence:
+    - "\\bevidence\\b"
+    - "\\bexperiment\\b"
+    - "\\bmeasurement\\b"
+    - "\\bobserve\\b"
+    - "\\bdata\\b"
+    - "\\bresults\\b"
+  summarize_history:
+    - "\\bhistory\\b"
+    - "\\beventually\\b"
+    - "\\breplaced\\b"
+    - "\\bbefore\\b"
+    - "\\bimportance\\b.*\\bwork\\b"
+  apply_to_case:
+    - "\\bconsider\\b"
+    - "\\bimagine\\b"
+    - "\\bin practice\\b"
+    - "\\bapply\\b"
+  argue_position:
+    - "\\btake a position\\b"
+    - "\\bdefend\\b"
+    - "\\bjustify\\b"
+    - "\\bargue that\\b"
+
+level_markers:
+  micro_mechanistic:
+    - "\\bmechanism\\b"
+    - "\\binteracts?\\b"
+    - "\\bprocess\\b"
+    - "\\bcause\\b"
+    - "\\bleads to\\b"
+  macro_system:
+    - "\\bsystem\\b"
+    - "\\bemerge\\b"
+    - "\\bcollective\\b"
+    - "\\bpopulation\\b"
+    - "\\binstitution\\b"
+  methodological:
+    - "\\bexperiment\\b"
+    - "\\bmeasurement\\b"
+    - "\\bevidence\\b"
+    - "\\bdata\\b"
+    - "\\bobserve\\b"
+    - "\\bprecise\\b"
+  interpretive:
+    - "\\binterpretation\\b"
+    - "\\bmeans\\b"
+    - "\\bwhat does it mean\\b"
+    - "\\breality\\b"
+    - "\\bdescribes physical reality\\b"
+  normative:
+    - "\\bshould\\b"
+    - "\\bought\\b"
+    - "\\bmoral\\b"
+    - "\\bethic\\w*\\b"
+    - "\\bgood\\b|\\bbad\\b"
+  historical:
+    - "\\bbefore\\b"
+    - "\\beventually\\b"
+    - "\\bfor decades\\b"
+    - "\\bhistorical\\b"
+    - "\\breplaced\\b"
+    - "\\bLavoisier\\b"
+
+mode_markers:
+  causal:
+    - "\\bbecause\\b"
+    - "\\bleads to\\b"
+    - "\\bresults in\\b"
+    - "\\btherefore\\b"
+  probabilistic:
+    - "\\bprobabilit\\w*\\b"
+    - "\\buncertaint\\w*\\b"
+    - "\\blikely\\b"
+    - "\\bdistribution\\b"
+  analogical:
+    - "\\blike\\b"
+    - "\\bas if\\b"
+    - "\\banalogy\\b"
+    - "\\bimagine\\b"
+  deductive:
+    - "\\bif\\b.*\\bthen\\b"
+    - "\\bnecessarily\\b"
+    - "\\blogically\\b"
+  inductive:
+    - "\\bfrom observations\\b"
+    - "\\bpattern\\b"
+    - "\\btypically\\b"
+  abductive:
+    - "\\bbest explanation\\b"
+    - "\\binfer\\b"
+    - "\\bplausible\\b"
+  counterfactual:
+    - "\\bif\\b"
+    - "\\bsuppose\\b"
+    - "\\bhypothetical\\b"
+    - "\\bwould\\b"
+  descriptive:
+    - "\\bfor example\\b"
+    - "\\bsuch as\\b"
+    - "\\bdescribes\\b"
+
+scope_markers:
+  boundary_extremes:
+    - "\\bedge case\\b"
+    - "\\bboundary\\b"
+    - "\\bextreme\\b"
+    - "\\blimit\\b"
+    - "\\bhypothetical\\b"
+    - "\\bperfect\\b"
+    - "\\bzero temperature\\b"
+  concrete_case:
+    - "\\bfor example\\b"
+    - "\\bsuch as\\b"
+    - "\\bin this case\\b"
+    - "\\bin practice\\b"
+  general_principle:
+    - "\\bin general\\b"
+    - "\\btypically\\b"
+    - "\\bprinciple\\b"
+    - "\\boften\\b"
+    

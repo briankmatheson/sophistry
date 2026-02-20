@@ -1,90 +1,171 @@
 [
   {
-    "slug": "phlogiston",
-    "title": "Phlogiston",
-    "prompt": "What is phlogiston?",
-    "expected": {"answer": "an old theory of heat transfer"},
-    "tags": ["science", "medium", "disproven"],
-    "is_active": true
+    "slug": "benchmark-quantum-mechanism-1",
+    "title": "Quantum Mechanism and Measurement",
+    "prompt": "Explain how the double-slit experiment with single electrons demonstrates interference even when particles are emitted one at a time, and clarify what role measurement plays in altering the observed outcome. In your explanation, describe the difference between saying the electron goes through both slits and saying it is described by a probability distribution prior to detection. Address how this experiment challenges classical assumptions about particles having definite positions and trajectories at all times. Avoid focusing on philosophical interpretations; instead, explain the physical setup and the mechanism by which interference patterns arise and disappear when detectors are introduced.",
+    "tags": ["benchmark", "physics", "mechanism"],
+    "is_active": true,
+    "structural": {
+      "domain": "physics",
+      "intent": ["explain_mechanism"],
+      "level": ["micro_mechanistic", "methodological"],
+      "mode": ["causal", "probabilistic"],
+      "scope": "concrete_case"
+    }
   },
   {
-    "slug": "quark",
-    "title": "Quark",
-    "prompt": "What is a quark?",
-    "expected": {"answer": "subatomic constituent of matter"},
-    "tags": ["science", "easy"],
-    "is_active": true
+    "slug": "benchmark-quantum-limits-2",
+    "title": "Quantum Limits and Boundary Conditions",
+    "prompt": "Quantum mechanics works extremely well in laboratory experiments, but difficulties arise when we consider extreme cases such as systems near absolute zero, extremely high energy collisions, or hypothetical perfectly isolated systems. Describe what kinds of conceptual or mathematical tensions appear when pushing quantum theory toward these limits. Explain why these boundary conditions are important for evaluating whether the theory is complete. Focus on how the theory behaves at extremes rather than on historical debates or interpretive schools of thought.",
+    "tags": ["benchmark", "physics", "edge-case"],
+    "is_active": true,
+    "structural": {
+      "domain": "physics",
+      "intent": ["analyze_limits"],
+      "level": ["interpretive", "methodological"],
+      "mode": ["causal"],
+      "scope": "boundary_extremes"
+    }
   },
   {
-    "slug": "trolley-problem",
-    "title": "Trolley Problem",
-    "prompt": "Describe the trolley problem and its implications for ethics.",
-    "expected": {"answer": "a thought experiment contrasting utilitarian and deontological ethics"},
-    "tags": ["philosophy", "medium", "ethics"],
-    "is_active": true
+    "slug": "benchmark-quantum-evidence-3",
+    "title": "Quantum Evidence vs Interpretation",
+    "prompt": "Describe what experimental evidence supports the existence of quantum entanglement, and explain how that evidence differs from the claim that entangled particles communicate faster than light. In your answer, distinguish clearly between what is empirically measured in the laboratory and how different interpretations attempt to explain those results. Avoid arguing for a particular interpretation; instead, focus on the structure of the evidence and what conclusions are justified.",
+    "tags": ["benchmark", "physics", "evidence"],
+    "is_active": true,
+    "structural": {
+      "domain": "physics",
+      "intent": ["interpret_evidence"],
+      "level": ["methodological", "interpretive"],
+      "mode": ["causal"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "halting-problem",
-    "title": "Halting Problem",
-    "prompt": "What is the halting problem and why is it important?",
-    "expected": {"answer": "it is undecidable whether an arbitrary program will halt"},
-    "tags": ["cs", "hard", "computability"],
-    "is_active": true
+    "slug": "benchmark-phlogiston-transition-4",
+    "title": "Phlogiston Theory Replacement",
+    "prompt": "Before the identification of oxygen, chemists believed that burning materials released a substance called phlogiston. Explain why this theory initially appeared coherent given the observational tools available at the time. Then describe what specific measurements or experimental results created tension within the theory and led to its eventual replacement. Focus on the transition from one explanatory framework to another rather than simply stating that the theory was wrong.",
+    "tags": ["benchmark", "history_of_science"],
+    "is_active": true,
+    "structural": {
+      "domain": "history_of_science",
+      "intent": ["summarize_history", "interpret_evidence"],
+      "level": ["historical", "methodological"],
+      "mode": ["causal"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "luminiferous-aether",
-    "title": "Luminiferous Aether",
-    "prompt": "What was the luminiferous aether and why was it abandoned?",
-    "expected": {"answer": "a hypothetical medium for light propagation, undermined by experiments such as Michelson–Morley"},
-    "tags": ["science", "medium", "disproven"],
-    "is_active": true
+    "slug": "benchmark-phlogiston-mechanism-drift-5",
+    "title": "Phlogiston Logical Stress Test",
+    "prompt": "Imagine applying phlogiston theory to cases where metals gain weight when heated in sealed containers. Explain what logical adjustments supporters of the theory would need to make to preserve their explanation. Discuss whether such modifications strengthen or weaken the explanatory power of the theory, focusing specifically on internal consistency rather than historical outcome.",
+    "tags": ["benchmark", "chemistry", "edge-case"],
+    "is_active": true,
+    "structural": {
+      "domain": "chemistry",
+      "intent": ["analyze_limits", "evaluate_claim"],
+      "level": ["interpretive"],
+      "mode": ["counterfactual", "causal"],
+      "scope": "boundary_extremes"
+    }
   },
   {
-    "slug": "p-vs-np",
-    "title": "P vs NP",
-    "prompt": "Explain the P vs NP problem in simple terms.",
-    "expected": {"answer": "whether problems that are easy to verify are also easy to solve"},
-    "tags": ["cs", "hard", "open-problems"],
-    "is_active": true
+    "slug": "benchmark-sociobiology-mechanism-6",
+    "title": "Sociobiology and Kin Selection",
+    "prompt": "Explain how kin selection theory attempts to account for altruistic behavior among relatives, and clarify the mechanism by which genes influencing such behavior might spread through a population. Distinguish between saying behavior is genetically influenced and saying it is genetically determined. Focus on the biological reasoning rather than on moral or political implications.",
+    "tags": ["benchmark", "biology"],
+    "is_active": true,
+    "structural": {
+      "domain": "biology",
+      "intent": ["explain_mechanism"],
+      "level": ["micro_mechanistic", "macro_system"],
+      "mode": ["causal"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "ship-of-theseus",
-    "title": "Ship of Theseus",
-    "prompt": "What is the Ship of Theseus paradox?",
-    "expected": {"answer": "if all parts are replaced over time, is it still the same object"},
-    "tags": ["philosophy", "easy", "identity"],
-    "is_active": true
+    "slug": "benchmark-sociobiology-controversy-7",
+    "title": "Sociobiology and Controversy",
+    "prompt": "Why has the application of evolutionary reasoning to complex human social behavior generated controversy? Describe the types of claims that critics worry about, and explain the methodological challenges involved in testing sociobiological hypotheses in modern societies. Avoid defending or attacking the theory; instead, analyze the structure of the debate.",
+    "tags": ["benchmark", "social_science"],
+    "is_active": true,
+    "structural": {
+      "domain": "social_science",
+      "intent": ["evaluate_claim"],
+      "level": ["methodological", "interpretive"],
+      "mode": ["causal"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "spontaneous-generation",
-    "title": "Spontaneous Generation",
-    "prompt": "What was the theory of spontaneous generation?",
-    "expected": {"answer": "the idea that life arises from non-living matter, later refuted by experiments such as Pasteur's"},
-    "tags": ["science", "easy", "disproven"],
-    "is_active": true
+    "slug": "benchmark-cross-domain-category-error-8",
+    "title": "Category Boundary Stress Test",
+    "prompt": "Consider the claim that quantum indeterminacy proves that human free will exists. Analyze the structure of this argument and identify whether it involves a shift between different explanatory domains. Explain why moving from physical indeterminacy to claims about human agency may require additional premises. Focus on the logical structure rather than on defending a position about free will.",
+    "tags": ["benchmark", "category_error"],
+    "is_active": true,
+    "structural": {
+      "domain": "philosophy_of_science",
+      "intent": ["evaluate_claim"],
+      "level": ["interpretive"],
+      "mode": ["deductive"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "monty-hall",
-    "title": "Monty Hall Problem",
-    "prompt": "Explain the Monty Hall problem. Should you switch doors?",
-    "expected": {"answer": "yes — switching gives a 2/3 probability of winning"},
-    "tags": ["math", "medium", "probability"],
-    "is_active": true
+    "slug": "benchmark-methodology-vs-normative-9",
+    "title": "Methodological vs Normative Drift",
+    "prompt": "Describe how careful measurement of mass during combustion challenged the phlogiston theory. Focus on experimental design, measurement accuracy, and the interpretation of quantitative results. Do not discuss whether scientists should have abandoned the theory, but explain how the evidence constrained possible explanations.",
+    "tags": ["benchmark", "chemistry", "methodology"],
+    "is_active": true,
+    "structural": {
+      "domain": "chemistry",
+      "intent": ["interpret_evidence"],
+      "level": ["methodological"],
+      "mode": ["causal"],
+      "scope": "concrete_case"
+    }
   },
   {
-    "slug": "chinese-room",
-    "title": "Chinese Room",
-    "prompt": "What is Searle's Chinese Room argument?",
-    "expected": {"answer": "manipulating symbols according to rules does not constitute understanding"},
-    "tags": ["philosophy", "hard", "ai", "consciousness"],
-    "is_active": true
+    "slug": "benchmark-scope-collapse-10",
+    "title": "Scope Sensitivity Test",
+    "prompt": "Explain how decoherence helps account for the apparent transition from quantum behavior to classical behavior in large systems interacting with their environment. Focus specifically on how environmental interaction affects interference patterns, rather than giving a general summary of quantum mechanics.",
+    "tags": ["benchmark", "physics"],
+    "is_active": true,
+    "structural": {
+      "domain": "physics",
+      "intent": ["explain_mechanism"],
+      "level": ["micro_mechanistic"],
+      "mode": ["causal"],
+      "scope": "general_principle"
+    }
   },
   {
-    "slug": "fermi-paradox",
-    "title": "Fermi Paradox",
-    "prompt": "What is the Fermi paradox?",
-    "expected": {"answer": "the tension between the high likelihood of extraterrestrial civilizations and the lack of evidence"},
-    "tags": ["science", "medium", "space"],
-    "is_active": true
+    "slug": "benchmark-boundary-biology-11",
+    "title": "Biological Boundary Case",
+    "prompt": "How might sociobiology attempt to explain cases where individuals adopt children to whom they are not genetically related? Analyze how such cases challenge a narrow gene-centered explanation and describe possible mechanisms proposed to reconcile them within an evolutionary framework.",
+    "tags": ["benchmark", "biology", "edge-case"],
+    "is_active": true,
+    "structural": {
+      "domain": "biology",
+      "intent": ["analyze_limits"],
+      "level": ["macro_system", "interpretive"],
+      "mode": ["causal"],
+      "scope": "boundary_extremes"
+    }
+  },
+  {
+    "slug": "benchmark-interpretation-discipline-12",
+    "title": "Interpretive Discipline Test",
+    "prompt": "What does it mean to say that a scientific theory is empirically adequate but interpretively incomplete? Provide an explanation using an example from quantum mechanics or chemistry, and clarify the distinction between predictive success and ontological commitment.",
+    "tags": ["benchmark", "philosophy_of_science"],
+    "is_active": true,
+    "structural": {
+      "domain": "philosophy_of_science",
+      "intent": ["define", "interpret_evidence"],
+      "level": ["interpretive"],
+      "mode": ["deductive"],
+      "scope": "general_principle"
+    }
   }
 ]
+
