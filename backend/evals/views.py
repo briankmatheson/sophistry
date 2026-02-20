@@ -1,4 +1,4 @@
-from .scoring import score_answer
+from .scoring import score_case
 import os
 import random
 from django.http import JsonResponse
@@ -97,7 +97,7 @@ def mobile_answer(request):
     tc = TestCase.objects.get(id=testcase_id)
 
     # Structural scoring (primary)
-    score_result = score_answer(tc, answer)
+    score_result = score_case(tc, answer)
     normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
 
     r = Result.objects.create(
@@ -142,7 +142,7 @@ def mobile_preview_score(request):
     except TestCase.DoesNotExist:
         return response.Response({"detail": "unknown testcase_id"}, status=404)
 
-    score_result = score_answer(tc, answer)
+    score_result = score_case(tc, answer)
     normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
 
     return response.Response(
