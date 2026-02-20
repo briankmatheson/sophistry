@@ -891,9 +891,14 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Widget _reviewCard(Map<String, dynamic> r) {
-    final userClass = r['user_classification'] as Map<String, dynamic>?;
-    final claudeClass = r['claude_classification'] as Map<String, dynamic>?;
-    final avgClass = r['human_avg_classification'] as Map<String, dynamic>?;
+    Map<String, dynamic>? _asClassMap(dynamic v) {
+      if (v is Map<String, dynamic>) return v;
+      if (v is String) return {'level': v, 'icon': '—'};
+      return null;
+    }
+    final userClass = _asClassMap(r['user_classification']);
+    final claudeClass = _asClassMap(r['claude_classification']);
+    final avgClass = _asClassMap(r['human_avg_classification']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1053,7 +1058,11 @@ class SophistryDial extends StatelessWidget {
             size: size,
             thresholds: const [0, 40, 70, 90],
           ),
+<<<<<<< HEAD
           // Needle — pivot at bottom-center of the SizedBox via Alignment
+=======
+          // Needle — painted with canvas pivot at bottom-center (hub)
+>>>>>>> ae1c73a (.)
           Positioned(
             bottom: 0,
             child: SizedBox(
@@ -1127,7 +1136,10 @@ class DialLabelOverlay extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
+<<<<<<< HEAD
                     // Designed to sit on a dark, instrument-style dial.
+=======
+>>>>>>> ae1c73a (.)
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [
                       Shadow(
@@ -1155,7 +1167,11 @@ class _NeedlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+<<<<<<< HEAD
     // Hub/pivot is at bottom-center of the dial
+=======
+    // Pivot at bottom-center of the dial (the hub point)
+>>>>>>> ae1c73a (.)
     final pivot = Offset(size.width / 2, size.height);
 
     canvas.save();
