@@ -14,6 +14,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Dict, List
+from .structural_scoring import infer_structural_vector, score_structural_alignment detect_flags 
+
 
 
 _WORD_RE = re.compile(r"\b[\w']+\b", re.UNICODE)
