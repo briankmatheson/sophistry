@@ -21,15 +21,4 @@ spec:
       owner: sophistry
       secret:
         name: sophistry-db-secret
----
-apiVersion: v1
-data:
-  username: c29waGlzdHJ5
-  password: 
-kind: Secret
-metadata:
-  name: sophistry-db-secret
-  namespace: sophistry
-  labels:
-    cnpg.io/reload: "true"
-type: kubernetes.io/basic-auth
+

@@ -93,6 +93,17 @@ clean:
 	$(MAKE) -C backend clean
 	$(MAKE) -C anaflutter_app clean
 
+# ─── secrets (never checked in, generated from env) ───────
+secret:
+	@[ -n "$$POSTGRES_PASSWORD" ] || (echo "ERROR: POSTGRES_PASSWORD not set" && exit 1)
+	kubectl create secret generic sophistry-db-secret \
+		--namespace $(NS) \
+		--from-literal=username=sophistry \
+		--from-literal=password="$$POSTGRES_PASSWORD" \
+		--type=kubernetes.io/basic-auth \
+		--dry-run=client -o yaml | kubectl apply -f -
+	kubectl label secret sophistry-db-secret -n $(NS) cnpg.io/reload=true --overwrite
+
 # ─── apply ────────────────────────────────────────────────
 apply:
 	kubectl apply -f deploy/k8s/05-api.yaml
