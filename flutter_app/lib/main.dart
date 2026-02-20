@@ -547,7 +547,7 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Widget _progressBar() {
-    const minWords = 100;
+    const minWords = 42;
     const maxDisplay = 110; // 110% scale
     final pct = (_wordCount / minWords).clamp(0.0, maxDisplay / 100.0);
     final barValue = (pct * 100.0 / (maxDisplay / 100.0)).clamp(0.0, 100.0) / 100.0;
