@@ -49,8 +49,8 @@ migrate:
 seed:
 	bash deploy/k8s/seed.sh
 
-# ─── ship (the full monty) ────────────────────────────────
-ship: build push migrate deploy
+# ─── ship (the full monty, no migrate) ───────────────────
+ship: build push deploy
 	@echo "🚀 Sophistry $(VERSION) shipped!"
 
 # ─── logs ─────────────────────────────────────────────────
@@ -113,7 +113,6 @@ apply:
 	kubectl apply -f deploy/k8s/06-worker.yaml
 	kubectl apply -f deploy/k8s/08-ingress.yaml
 	kubectl apply -f deploy/k8s/09-sophistry-com.yaml
-	kubectl delete -f deploy/k8s/07-migrate-job.yaml && kubectl create -f deploy/k8s/07-migrate-job.yaml
 	kubectl rollout restart deploy -n sophistry
 # ─── roll ────────────────────────────────────────────────
 roll: release apply 
