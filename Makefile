@@ -21,17 +21,20 @@ version:
 build:
 	$(MAKE) -C backend build
 	$(MAKE) -C flutter_app build
+	$(MAKE) -C website build VERSION=$(VERSION)
 
 # ─── push ─────────────────────────────────────────────────
 push:
 	$(MAKE) -C backend push
 	$(MAKE) -C flutter_app push
+	$(MAKE) -C website push VERSION=$(VERSION)
 
 # ─── deploy ───────────────────────────────────────────────
 deploy:
 	@echo "Updating image tags to $(VERSION)..."
 	@sed -i 's|image: $(REPO)/sophistry-worker:.*|image: $(REPO)/sophistry-worker:$(VERSION)|' deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml deploy/k8s/07-migrate-job.yaml
 	@sed -i 's|image: $(REPO)/sophistry-web:.*|image: $(REPO)/sophistry-web:$(VERSION)|' deploy/k8s/05-web.yaml
+	@sed -i 's|image: $(REPO)/sophistry-com:.*|image: $(REPO)/sophistry-com:$(VERSION)|' deploy/k8s/09-sophistry-com.yaml
 	kubectl rollout restart -n $(NS) deploy
 
 migrate:
@@ -74,6 +77,7 @@ tag:
 	echo "$(LATEST_TAG) → $$NEXT"; \
 	sed -i "s|image: $(REPO)/sophistry-worker:.*|image: $(REPO)/sophistry-worker:$$NEXT|" deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml deploy/k8s/07-migrate-job.yaml; \
 	sed -i "s|image: $(REPO)/sophistry-web:.*|image: $(REPO)/sophistry-web:$$NEXT|" deploy/k8s/05-web.yaml; \
+	sed -i "s|image: $(REPO)/sophistry-com:.*|image: $(REPO)/sophistry-com:$$NEXT|" deploy/k8s/09-sophistry-com.yaml; \
 	git add -A; \
 	git commit -m "$$NEXT"; \
 	git tag "$$NEXT"; \
@@ -94,6 +98,8 @@ apply:
 	kubectl apply -f deploy/k8s/05-api.yaml
 	kubectl apply -f deploy/k8s/05-web.yaml
 	kubectl apply -f deploy/k8s/06-worker.yaml
+	kubectl apply -f deploy/k8s/08-ingress.yaml
+	kubectl apply -f deploy/k8s/09-sophistry-com.yaml
 	kubectl delete -f deploy/k8s/07-migrate-job.yaml && kubectl create -f deploy/k8s/07-migrate-job.yaml
 	kubectl rollout restart deploy -n sophistry
 # ─── roll ────────────────────────────────────────────────
