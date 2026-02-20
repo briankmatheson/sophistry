@@ -580,7 +580,7 @@ class _SophistryHomeState extends State<SophistryHome> {
           const SizedBox(height: 10),
           // ─── live preview ───────────────────────────────
           if (previewResult != null) _buildPreviewFeedback(),
-          ─── check result (explicit validate) ───────────
+          // ─── check result (explicit validate) ───────────
           if (checkResult != null) _buildCheckResult(),
           const SizedBox(height: 10),
           Row(
