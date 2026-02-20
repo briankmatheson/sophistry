@@ -22,6 +22,15 @@ class SophistryApi {
     return '?';
   }
 
+  /// Get read-only server constants (version, min_words, min_sentences, etc.)
+  Future<Map<String, dynamic>> getInfo() async {
+    final res = await http.get(_u('/api/mobile/info'));
+    if (res.statusCode != 200) {
+      throw Exception('getInfo failed: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   /// Create a new run, returns run_uuid
   Future<String> createRun() async {
     final res = await http.post(_u('/api/mobile/run/'));
@@ -86,6 +95,27 @@ class SophistryApi {
     );
     if (res.statusCode != 200) {
       throw Exception('previewScore failed: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Validate answer text (min chars / sentences) and optionally score
+  /// when both question + answer are present.  Never persists anything.
+  Future<Map<String, dynamic>> validate({
+    int? testcaseId,
+    String? prompt,
+    required String answer,
+  }) async {
+    final body = <String, dynamic>{'answer': answer};
+    if (testcaseId != null) body['testcase_id'] = testcaseId;
+    if (prompt != null) body['prompt'] = prompt;
+    final res = await http.post(
+      _u('/api/mobile/validate/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('validate failed: ${res.statusCode} ${res.body}');
     }
     return jsonDecode(res.body) as Map<String, dynamic>;
   }

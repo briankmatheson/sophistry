@@ -10,11 +10,10 @@ import 'session.dart';
 void main() => runApp(const SophistryApp());
 
 // ─── palette ───────────────────────────────────────────────
-const _purple = Color(0xFF7C5CBF);
-const _purpleLight = Color(0xFFEDE7F6);
+const _darkslategray = Color(0xFF2F4F4F);
+const _darkslategrayLight = Color(0xFFE0EDED);
 const _green = Color(0xFF4CAF50);
 const _amber = Color(0xFFFFA726);
-const _darkslategray = Color(0x2F4F4F99);
 
 // ─── Dial tooltips (F / B / R / U) ───────────────────────
 class DialBandInfo {
@@ -105,8 +104,14 @@ class _SophistryHomeState extends State<SophistryHome> {
   String? _lastPreviewText;
   int _wordCount = 0;
 
-  // version info
+  // check (validate-only) result — triggered by explicit button
+  Map<String, dynamic>? checkResult;
+  bool checking = false;
+
+  // server info (fetched from /api/mobile/info)
   String backendVersion = '…';
+  int serverMinWords = 42;
+  int serverMinSentences = 3;
 
   @override
   void initState() {
@@ -169,9 +174,20 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Future<void> _init() async {
-    // Fetch backend version (non-blocking)
-    api.getBackendVersion().then((v) {
-      if (mounted) setState(() => backendVersion = v);
+    // Fetch server constants (non-blocking)
+    api.getInfo().then((info) {
+      if (mounted) {
+        setState(() {
+          backendVersion = info['version'] as String? ?? '?';
+          serverMinWords = (info['min_words'] as num?)?.toInt() ?? 42;
+          serverMinSentences = (info['min_sentences'] as num?)?.toInt() ?? 3;
+        });
+      }
+    }).catchError((_) {
+      // Fall back to getBackendVersion if info endpoint unavailable
+      api.getBackendVersion().then((v) {
+        if (mounted) setState(() => backendVersion = v);
+      });
     });
 
     sessionId = getSessionId();
@@ -255,6 +271,40 @@ class _SophistryHomeState extends State<SophistryHome> {
     }
   }
 
+  Future<void> _checkAnswer() async {
+    final ans = answerCtl.text.trim();
+    if (ans.isEmpty) return;
+
+    setState(() {
+      checking = true;
+      checkResult = null;
+      statusLine = '';
+    });
+
+    try {
+      final result = await api.validate(
+        testcaseId: currentQuestion != null
+            ? (currentQuestion!['testcase_id'] as num).toInt()
+            : null,
+        prompt: currentQuestion?['prompt'] as String?,
+        answer: ans,
+      );
+      if (mounted) {
+        setState(() {
+          checkResult = result;
+          checking = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          checking = false;
+          statusLine = 'Check error: $e';
+        });
+      }
+    }
+  }
+
   Future<void> _submitAnswer() async {
     if (runUuid == null || currentQuestion == null) return;
     final ans = answerCtl.text.trim();
@@ -278,6 +328,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       _lastPreviewText = null;
       _wordCount = 0;
       previewResult = null;
+      checkResult = null;
       saveProgress(questionsAnswered);
 
       if (questionsAnswered >= AppConfig.questionsPerSession) {
@@ -529,13 +580,27 @@ class _SophistryHomeState extends State<SophistryHome> {
           const SizedBox(height: 10),
           // ─── live preview ───────────────────────────────
           if (previewResult != null) _buildPreviewFeedback(),
+          // ─── check result (explicit validate) ───────────
+          if (checkResult != null) _buildCheckResult(),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: busy || currentQuestion == null ? null : _submitAnswer,
-              child: Text(busy ? 'Submitting…' : 'Submit'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: busy || checking || answerCtl.text.trim().isEmpty
+                      ? null
+                      : _checkAnswer,
+                  child: Text(checking ? 'Checking…' : 'Check'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: busy || currentQuestion == null ? null : _submitAnswer,
+                  child: Text(busy ? 'Submitting…' : 'Submit'),
+                ),
+              ),
+            ],
           ),
           if (statusLine.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -547,7 +612,7 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Widget _progressBar() {
-    const minWords = 42;
+    final minWords = serverMinWords;
     const maxDisplay = 110; // 110% scale
     final pct = (_wordCount / minWords).clamp(0.0, maxDisplay / 100.0);
     final barValue = (pct * 100.0 / (maxDisplay / 100.0)).clamp(0.0, 100.0) / 100.0;
@@ -561,7 +626,7 @@ class _SophistryHomeState extends State<SophistryHome> {
             value: barValue,
             minHeight: 8,
             backgroundColor: _darkslategray,
-            valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _purple),
+            valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _darkslategray),
           ),
         ),
         const SizedBox(height: 4),
@@ -578,10 +643,32 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // ─── LIVE PREVIEW FEEDBACK ──────────────────────────────
   Widget _buildPreviewFeedback() {
-    final details = previewResult?['score_details'] as Map<String, dynamic>? ?? {};
-    final score0100 = (details['score_0_100'] as num?)?.toDouble() ?? 0;
-    final band = details['band'] as String? ?? '';
-    final notes = (details['notes'] as List<dynamic>?)?.cast<String>() ?? [];
+    // score_details from API contains the structural_scoring payload
+    final scoreDetails = previewResult?['score_details'] as Map<String, dynamic>? ?? {};
+    final innerDetails = scoreDetails['score_details'] as Map<String, dynamic>? ?? {};
+    // structural_score is 0..1
+    final rawScore = (innerDetails['structural_score'] as num?)?.toDouble() ??
+        (scoreDetails['score'] as num?)?.toDouble() ??
+        0;
+    final score0100 = rawScore <= 1.0 ? rawScore * 100.0 : rawScore;
+    // Extract explain lines for coaching notes
+    final explain = (innerDetails['explain'] as List<dynamic>?)?.cast<String>() ?? [];
+    // Fallback: old-style notes
+    final notes = explain.isNotEmpty
+        ? explain
+        : (scoreDetails['notes'] as List<dynamic>?)?.cast<String>() ?? [];
+    // Band from flags
+    final flags = innerDetails['flags'] as Map<String, dynamic>?;
+    String band = '';
+    if (score0100 >= 90) {
+      band = 'UNDERSTANDING';
+    } else if (score0100 >= 70) {
+      band = 'REASONING';
+    } else if (score0100 >= 40) {
+      band = 'BELIEF';
+    } else {
+      band = 'FLUENCY';
+    }
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 250),
@@ -592,7 +679,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.75),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _purple.withOpacity(0.2)),
+          border: Border.all(color: _darkslategray.withOpacity(0.2)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,7 +697,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: _purple.withOpacity(0.8),
+                      color: _darkslategray.withOpacity(0.8),
                     ),
                   ),
                   if (notes.isNotEmpty) ...[
@@ -630,6 +717,137 @@ class _SophistryHomeState extends State<SophistryHome> {
         ),
       ),
     );
+  }
+
+  // ─── CHECK RESULT (explicit validate button) ─────────
+  Widget _buildCheckResult() {
+    final validation = checkResult?['validation'] as Map<String, dynamic>? ?? {};
+    final scored = checkResult?['scored'] == true;
+    final wordsOk = validation['words_ok'] == true;
+    final sentencesOk = validation['sentences_ok'] == true;
+    final allOk = validation['ok'] == true;
+    final wc = validation['word_count'] ?? 0;
+    final sc = validation['sentence_count'] ?? 0;
+    final minW = validation['min_words'] ?? 42;
+    final minS = validation['min_sentences'] ?? 3;
+
+    // If scored, extract the structural score for the dial
+    double? dialScore;
+    if (scored) {
+      final scoreDetails = checkResult?['score_details'] as Map<String, dynamic>? ?? {};
+      final rawScore = scoreDetails['score'] as num? ?? 0;
+      // score is 0..1 from structural_scoring
+      dialScore = (rawScore.toDouble() * 100.0).clamp(0.0, 100.0);
+    }
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: allOk
+              ? _green.withOpacity(0.06)
+              : Colors.orange.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: allOk
+                ? _green.withOpacity(0.3)
+                : Colors.orange.withOpacity(0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Validation row
+            Row(
+              children: [
+                Icon(
+                  allOk ? Icons.check_circle : Icons.warning_amber_rounded,
+                  size: 18,
+                  color: allOk ? _green : Colors.orange,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  allOk ? 'Validation passed' : 'Needs more work',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: allOk ? _green : Colors.orange[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Words: $wc / $minW ${wordsOk ? "✓" : "✗"}    '
+              'Sentences: $sc / $minS ${sentencesOk ? "✓" : "✗"}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[700],
+              ),
+            ),
+            // Scoring section — only when both question + answer present
+            if (scored && dialScore != null) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SophistryDial(score: dialScore, size: const Size(80, 44)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Structural alignment',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: _darkslategray.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Score: ${dialScore.round()} / 100',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        ),
+                        if (checkResult?['score_details'] != null) ...[
+                          const SizedBox(height: 2),
+                          ..._explainLines(checkResult!['score_details'] as Map<String, dynamic>),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (!scored) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Add a question to also see the alignment score.',
+                style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey[500]),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _explainLines(Map<String, dynamic> scoreDetails) {
+    final explain = (scoreDetails['score_details'] as Map<String, dynamic>?)?['explain'] as List<dynamic>?;
+    if (explain == null || explain.isEmpty) return [];
+    return explain.take(3).map((e) => Padding(
+      padding: const EdgeInsets.only(bottom: 1),
+      child: Text(
+        e.toString(),
+        style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+      ),
+    )).toList();
   }
 
   // ─── REVIEW SCREEN ─────────────────────────────────────
@@ -732,7 +950,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                 const SizedBox(width: 8),
                 Expanded(child: _scoreColumn('Claude', r['claude_score'], claudeClass, _amber)),
                 const SizedBox(width: 8),
-                Expanded(child: _scoreColumn('Avg Human', r['human_avg_score'], avgClass, _purple)),
+                Expanded(child: _scoreColumn('Avg Human', r['human_avg_score'], avgClass, _darkslategray)),
               ],
             ),
           ],

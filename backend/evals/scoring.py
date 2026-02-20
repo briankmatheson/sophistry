@@ -47,8 +47,8 @@ def score_answer(testcase, answer_text: str) -> dict:
     validation = expected.get("validation") if isinstance(expected, dict) else None
 
     # Defaults from settings, overridable per-testcase via expected.validation
-    min_words = settings.SCORING_MIN_WORDS
-    min_sentences = settings.SCORING_MIN_SENTENCES
+    min_words = settings.SOPHISTRY_MIN_WORDS
+    min_sentences = settings.SOPHISTRY_MIN_SENTENCES
 
     if isinstance(validation, dict):
         min_words = int(validation.get("min_words") or min_words)
