@@ -13,6 +13,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from django.conf import settings
+
 from .structural import score_structural
 from .structural_scoring import load_vocab, score_structural_alignment
 
@@ -44,9 +46,9 @@ def score_answer(testcase, answer_text: str) -> dict:
     expected = testcase.expected or {}
     validation = expected.get("validation") if isinstance(expected, dict) else None
 
-    # Defaults for Sophistry sessions: long-form answers
-    min_words = 100
-    min_sentences = 3
+    # Defaults from settings, overridable per-testcase via expected.validation
+    min_words = settings.SCORING_MIN_WORDS
+    min_sentences = settings.SCORING_MIN_SENTENCES
 
     if isinstance(validation, dict):
         min_words = int(validation.get("min_words") or min_words)

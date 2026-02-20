@@ -123,8 +123,8 @@ def score_structural(
     prompt: str,
     answer: str,
     *,
-    min_words: int = 100,
-    min_sentences: int = 3,
+    min_words: int = settings.SOPHISTRY_MIN_WORDS,
+    min_sentences: int = settings.SOPHISTRY_MIN_SENTENCES,
 ) -> StructuralVerdict:
     ans = (answer or "").strip()
     wc = count_words(ans)
