@@ -37,8 +37,14 @@ def _compile_patterns(patterns: List[str]) -> List[re.Pattern]:
 def load_vocab(path: str) -> Dict[str, Any]:
     if yaml is None:
         raise RuntimeError("PyYAML not available. Install pyyaml or load vocab as dict.")
-    with open(path, "r", encoding="utf-8") as f:
-        vocab = yaml.safe_load(f)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            vocab = yaml.safe_load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"Structural vocab file not found: '{path}'. "
+            "Set STRUCTURAL_VOCAB_PATH to the correct path or place structural_vocab.yaml in the evals directory."
+        )
     return vocab
 
 
