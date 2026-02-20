@@ -643,23 +643,15 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // ─── LIVE PREVIEW FEEDBACK ──────────────────────────────
   Widget _buildPreviewFeedback() {
-    // score_details from API contains the structural_scoring payload
-    final scoreDetails = previewResult?['score_details'] as Map<String, dynamic>? ?? {};
-    final innerDetails = scoreDetails['score_details'] as Map<String, dynamic>? ?? {};
-    // structural_score is 0..1
-    final rawScore = (innerDetails['structural_score'] as num?)?.toDouble() ??
-        (scoreDetails['score'] as num?)?.toDouble() ??
-        0;
-    final score0100 = rawScore <= 1.0 ? rawScore * 100.0 : rawScore;
-    // Extract explain lines for coaching notes
-    final explain = (innerDetails['explain'] as List<dynamic>?)?.cast<String>() ?? [];
-    // Fallback: old-style notes
-    final notes = explain.isNotEmpty
-        ? explain
-        : (scoreDetails['notes'] as List<dynamic>?)?.cast<String>() ?? [];
-    // Band from flags
-    final flags = innerDetails['flags'] as Map<String, dynamic>?;
-    String band = '';
+    // API shape: { score: 0.xx, score_details: { score: 0.xx, score_details: { structural_score, explain, ... } } }
+    final topScore = (previewResult?['score'] as num?)?.toDouble() ?? 0;
+    final score0100 = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
+
+    final inner = (previewResult?['score_details'] as Map<String, dynamic>?);
+    final structural = (inner?['score_details'] as Map<String, dynamic>?) ?? {};
+    final explain = (structural['explain'] as List<dynamic>?)?.cast<String>() ?? [];
+
+    String band;
     if (score0100 >= 90) {
       band = 'UNDERSTANDING';
     } else if (score0100 >= 70) {
@@ -700,9 +692,9 @@ class _SophistryHomeState extends State<SophistryHome> {
                       color: _darkslategray.withOpacity(0.8),
                     ),
                   ),
-                  if (notes.isNotEmpty) ...[
+                  if (explain.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    ...notes.map((n) => Padding(
+                    ...explain.take(3).map((n) => Padding(
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         n,
@@ -734,10 +726,9 @@ class _SophistryHomeState extends State<SophistryHome> {
     // If scored, extract the structural score for the dial
     double? dialScore;
     if (scored) {
-      final scoreDetails = checkResult?['score_details'] as Map<String, dynamic>? ?? {};
-      final rawScore = scoreDetails['score'] as num? ?? 0;
-      // score is 0..1 from structural_scoring
-      dialScore = (rawScore.toDouble() * 100.0).clamp(0.0, 100.0);
+      final topScore = (checkResult?['score'] as num?)?.toDouble() ?? 0;
+      // score is 0..1 from backend
+      dialScore = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
     }
 
     return AnimatedSize(
@@ -1042,8 +1033,11 @@ class SophistryDial extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clamped = score.clamp(0.0, 100.0);
-    final angleDeg = (clamped / 100.0) * 180.0 - 90.0;
-    final angleRad = angleDeg * math.pi / 180.0;
+    // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
+    // Map to radians: 0→-π/2, 50→0, 100→+π/2
+    final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
+    final radius = math.min(size.width / 2, size.height) - 6;
+    final needleLen = radius * 0.72;
 
     return SizedBox(
       width: size.width,
@@ -1059,12 +1053,26 @@ class SophistryDial extends StatelessWidget {
             size: size,
             thresholds: const [0, 40, 70, 90],
           ),
+          // Needle — pivot at bottom-center of the SizedBox via Alignment
           Positioned(
-            bottom: 10,
-            child: _Needle(angleRad: angleRad),
+            bottom: 0,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: -math.pi / 2, end: angleRad),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutCubic,
+                builder: (_, a, __) => CustomPaint(
+                  size: size,
+                  painter: _NeedlePainter(angleRad: a, needleLength: needleLen),
+                ),
+              ),
+            ),
           ),
+          // Hub cap
           Positioned(
-            bottom: 4,
+            bottom: -1,
             child: _Hub(),
           ),
         ],
@@ -1139,55 +1147,47 @@ class DialLabelOverlay extends StatelessWidget {
   }
 }
 
-class _Needle extends StatelessWidget {
-  final double angleRad;
-  const _Needle({required this.angleRad});
-
-  @override
-  Widget build(BuildContext context) {
-    final needle = SizedBox(
-      width: 6,
-      height: sizeForNeedle(context),
-      child: CustomPaint(painter: _NeedlePainter()),
-    );
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: -math.pi / 2, end: angleRad),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-      builder: (_, a, child) => Transform.rotate(angle: a, child: child),
-      child: needle,
-    );
-  }
-
-  double sizeForNeedle(BuildContext context) => 50;
-}
-
 class _NeedlePainter extends CustomPainter {
+  final double angleRad;
+  final double needleLength;
+
+  _NeedlePainter({required this.angleRad, required this.needleLength});
+
   @override
   void paint(Canvas canvas, Size size) {
-    // A crisp, instrument-style needle: red with a subtle shadow.
-    final shadowPaint = Paint()..color = const Color(0x66000000);
-    final needlePaint = Paint()..color = const Color(0xFFE53935);
-
-    final cx = size.width / 2;
-
-    final needlePath = Path()
-      ..moveTo(cx, 0)
-      ..lineTo(cx + 1.6, size.height)
-      ..lineTo(cx - 1.6, size.height)
-      ..close();
+    // Hub/pivot is at bottom-center of the dial
+    final pivot = Offset(size.width / 2, size.height);
 
     canvas.save();
-    canvas.translate(0, 1);
-    canvas.drawPath(needlePath, shadowPaint);
-    canvas.restore();
+    canvas.translate(pivot.dx, pivot.dy);
+    canvas.rotate(angleRad);
 
-    canvas.drawPath(needlePath, needlePaint);
+    // Needle points upward from pivot (negative Y)
+    const halfW = 1.8;
+    final tip = -needleLength;
+
+    // Shadow
+    final shadowPath = Path()
+      ..moveTo(0, tip + 1)
+      ..lineTo(halfW + 0.4, 0)
+      ..lineTo(-halfW - 0.4, 0)
+      ..close();
+    canvas.drawPath(shadowPath, Paint()..color = const Color(0x44000000));
+
+    // Red needle
+    final needlePath = Path()
+      ..moveTo(0, tip)
+      ..lineTo(halfW, 0)
+      ..lineTo(-halfW, 0)
+      ..close();
+    canvas.drawPath(needlePath, Paint()..color = const Color(0xFFE53935));
+
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NeedlePainter old) =>
+      old.angleRad != angleRad || old.needleLength != needleLength;
 }
 
 class _Hub extends StatelessWidget {
