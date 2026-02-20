@@ -11,10 +11,12 @@ router.register(r"api/results", ResultViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("api/mobile/info", views.mobile_info),
     path("api/mobile/run/", views.mobile_create_run),
     path("api/mobile/question", views.mobile_question),
     path("api/mobile/answer/", views.mobile_answer),
     path("api/mobile/preview_score/", views.mobile_preview_score),
+    path("api/mobile/validate/", views.mobile_validate),
     path("api/mobile/testcase/", views.mobile_create_testcase),
     path("api/mobile/review/", review),
 ]

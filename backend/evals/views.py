@@ -18,6 +18,18 @@ def home(request):
     return JsonResponse({"ok": True, "service": "sophistry-backend", "version": os.environ.get("APP_VERSION", "dev")})
 
 
+@decorators.api_view(["GET"])
+def mobile_info(request):
+    """Read-only constants the client needs."""
+    from django.conf import settings as _s
+    return response.Response({
+        "version": os.environ.get("APP_VERSION", "dev"),
+        "min_words": _s.SOPHISTRY_MIN_WORDS,
+        "min_sentences": _s.SOPHISTRY_MIN_SENTENCES,
+        "questions_per_session": int(os.environ.get("QUESTIONS_PER_SESSION", 4)),
+    })
+
+
 class TestCaseViewSet(viewsets.ModelViewSet):
     queryset = TestCase.objects.all().order_by("id")
     serializer_class = TestCaseSerializer
@@ -97,8 +109,10 @@ def mobile_answer(request):
     tc = TestCase.objects.get(id=testcase_id)
 
     # Structural scoring (primary)
-    score_result = score_case(tc, answer)
-    normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
+    score_result = score_case(tc.prompt, answer)
+    raw = score_result.get("score", 0) or 0
+    # score is already 0..1 from structural_scoring; normalize defensively
+    normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
 
     r = Result.objects.create(
         run=run,
@@ -142,8 +156,9 @@ def mobile_preview_score(request):
     except TestCase.DoesNotExist:
         return response.Response({"detail": "unknown testcase_id"}, status=404)
 
-    score_result = score_case(tc, answer)
-    normalized_score = round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
+    score_result = score_case(tc.prompt, answer)
+    raw = score_result.get("score", 0) or 0
+    normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
 
     return response.Response(
         {
@@ -152,6 +167,58 @@ def mobile_preview_score(request):
             "score_details": score_result,
         }
     )
+
+
+@decorators.api_view(["POST"])
+def mobile_validate(request):
+    """Validate answer text (min chars / sentences) and optionally score when
+    both a question prompt and answer are provided.  Never persists anything."""
+    answer = request.data.get("answer") or request.data.get("output_text") or ""
+    prompt = request.data.get("prompt")          # free-text question
+    testcase_id = request.data.get("testcase_id")  # OR existing testcase
+
+    from django.conf import settings as _s
+    min_words = int(request.data.get("min_words", _s.SOPHISTRY_MIN_WORDS))
+    min_sentences = int(request.data.get("min_sentences", _s.SOPHISTRY_MIN_SENTENCES))
+
+    # --- basic validation (always returned) ---
+    from .structural import count_words, count_sentences
+    wc = count_words(answer)
+    sc = count_sentences(answer)
+    validation = {
+        "word_count": wc,
+        "sentence_count": sc,
+        "min_words": min_words,
+        "min_sentences": min_sentences,
+        "words_ok": wc >= min_words,
+        "sentences_ok": sc >= min_sentences,
+        "ok": wc >= min_words and sc >= min_sentences,
+    }
+
+    payload = {"ok": True, "validation": validation}
+
+    # --- optional scoring (needs a prompt) ---
+    question_text = None
+    if testcase_id:
+        try:
+            tc = TestCase.objects.get(id=testcase_id)
+            question_text = tc.prompt
+        except TestCase.DoesNotExist:
+            pass
+    if not question_text and prompt:
+        question_text = prompt
+
+    if question_text and answer.strip():
+        score_result = score_case(question_text, answer)
+        raw = score_result.get("score", 0) or 0
+        normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
+        payload["scored"] = True
+        payload["score"] = normalized_score
+        payload["score_details"] = score_result
+    else:
+        payload["scored"] = False
+
+    return response.Response(payload)
 
 
 @decorators.api_view(["POST"])
