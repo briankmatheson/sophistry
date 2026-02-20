@@ -17,7 +17,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: worker
-          image: briankmatheson/sophistry-worker:0.7.2
+          image: briankmatheson/sophistry-worker:0.7.3
           envFrom:
             - configMapRef:
                 name: sophistry-config
@@ -26,6 +26,8 @@ spec:
           env:
             - name: ROLE
               value: worker
+            - name: APP_VERSION
+              value: "0.7.3"
 ---
 apiVersion: v1
 kind: Service

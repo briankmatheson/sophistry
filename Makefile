@@ -31,10 +31,11 @@ push:
 
 # ─── deploy ───────────────────────────────────────────────
 deploy:
-	@echo "Updating image tags to $(VERSION)..."
+	@echo "Updating image tags and APP_VERSION to $(VERSION)..."
 	@sed -i 's|image: $(REPO)/sophistry-worker:.*|image: $(REPO)/sophistry-worker:$(VERSION)|' deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml deploy/k8s/07-migrate-job.yaml
 	@sed -i 's|image: $(REPO)/sophistry-web:.*|image: $(REPO)/sophistry-web:$(VERSION)|' deploy/k8s/05-web.yaml
 	@sed -i 's|image: $(REPO)/sophistry-com:.*|image: $(REPO)/sophistry-com:$(VERSION)|' deploy/k8s/09-sophistry-com.yaml
+	@sed -i '/name: APP_VERSION/{n;s|value: ".*"|value: "$(VERSION)"|}' deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml
 	kubectl rollout restart -n $(NS) deploy
 
 migrate:
@@ -78,6 +79,7 @@ tag:
 	sed -i "s|image: $(REPO)/sophistry-worker:.*|image: $(REPO)/sophistry-worker:$$NEXT|" deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml deploy/k8s/07-migrate-job.yaml; \
 	sed -i "s|image: $(REPO)/sophistry-web:.*|image: $(REPO)/sophistry-web:$$NEXT|" deploy/k8s/05-web.yaml; \
 	sed -i "s|image: $(REPO)/sophistry-com:.*|image: $(REPO)/sophistry-com:$$NEXT|" deploy/k8s/09-sophistry-com.yaml; \
+	sed -i "/name: APP_VERSION/{n;s|value: \".*\"|value: \"$$NEXT\"|}" deploy/k8s/05-api.yaml deploy/k8s/06-worker.yaml; \
 	git add -A; \
 	git commit -m "$$NEXT"; \
 	git tag "$$NEXT"; \
