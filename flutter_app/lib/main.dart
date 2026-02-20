@@ -581,27 +581,27 @@ class _SophistryHomeState extends State<SophistryHome> {
           // ─── live preview ───────────────────────────────
           if (previewResult != null) _buildPreviewFeedback(),
           // ─── check result (explicit validate) ───────────
-          if (checkResult != null) _buildCheckResult(),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: busy || checking || answerCtl.text.trim().isEmpty
-                      ? null
-                      : _checkAnswer,
-                  child: Text(checking ? 'Checking…' : 'Check'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: busy || currentQuestion == null ? null : _submitAnswer,
-                  child: Text(busy ? 'Submitting…' : 'Submit'),
-                ),
-              ),
-            ],
-          ),
+          // if (checkResult != null) _buildCheckResult(),
+          // const SizedBox(height: 10),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: OutlinedButton(
+          //         onPressed: busy || checking || answerCtl.text.trim().isEmpty
+          //             ? null
+          //             : _checkAnswer,
+          //         child: Text(checking ? 'Checking…' : 'Check'),
+          //       ),
+          //     ),
+          //     const SizedBox(width: 12),
+          //     Expanded(
+          //       child: FilledButton(
+          //         onPressed: busy || currentQuestion == null ? null : _submitAnswer,
+          //         child: Text(busy ? 'Submitting…' : 'Submit'),
+          //       ),
+          //     ),
+          //   ],
+          // ),
           if (statusLine.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(statusLine, style: const TextStyle(fontSize: 12)),
