@@ -118,8 +118,8 @@ REST_FRAMEWORK = {
 }
 
 # ─── Scoring defaults ─────────────────────────────────────
-SCORING_MIN_WORDS = int(os.getenv("SCORING_MIN_WORDS", 100))
-SCORING_MIN_SENTENCES = int(os.getenv("SCORING_MIN_SENTENCES", 3))
+SOPHISTRY_MIN_WORDS = int(os.getenv("SCORING_MIN_WORDS", 42))
+SOPHISTRY_MIN_SENTENCES = int(os.getenv("SCORING_MIN_SENTENCES", 3))
 
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = "django-db"
