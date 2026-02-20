@@ -7,17 +7,27 @@ from rest_framework.response import Response
 from evals.models import Run, Result
 
 
-def _classify(score: float | None) -> str | None:
+_BAND_META = {
+    "UNDERSTANDING": {"level": "Understanding", "icon": "☀️"},
+    "REASONING":     {"level": "Reasoning",     "icon": "📐"},
+    "BELIEF":        {"level": "Belief",         "icon": "🤝"},
+    "FLUENCY":       {"level": "Fluency",        "icon": "🪞"},
+}
+
+
+def _classify(score: float | None) -> dict | None:
     if score is None:
         return None
     s = float(score)
     if s >= 0.90:
-        return "UNDERSTANDING"
-    if s >= 0.70:
-        return "REASONING"
-    if s >= 0.40:
-        return "BELIEF"
-    return "FLUENCY"
+        band = "UNDERSTANDING"
+    elif s >= 0.70:
+        band = "REASONING"
+    elif s >= 0.40:
+        band = "BELIEF"
+    else:
+        band = "FLUENCY"
+    return _BAND_META[band]
 
 
 @api_view(["GET"])
@@ -78,11 +88,10 @@ def review(request):
                 "user_answer": r.output_text,
                 "user_score": r.score,
                 "user_score_details": r.score_details,
-                "user_classification": (r.score_details or {}).get("band") or _classify(r.score),
+                "user_classification": _classify(r.score),
                 "claude_score": claude_result.score if claude_result else None,
                 "claude_score_details": claude_result.score_details if claude_result else None,
-                "claude_classification": ((claude_result.score_details or {}).get("band") if claude_result else None)
-                or (_classify(claude_result.score) if claude_result else None),
+                "claude_classification": _classify(claude_result.score) if claude_result else None,
                 "human_avg_score": round(human_avg, 2) if human_avg is not None else None,
                 "human_avg_classification": _classify(human_avg) if human_avg is not None else None,
             }

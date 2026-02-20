@@ -900,9 +900,14 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Widget _reviewCard(Map<String, dynamic> r) {
-    final userClass = r['user_classification'] as Map<String, dynamic>?;
-    final claudeClass = r['claude_classification'] as Map<String, dynamic>?;
-    final avgClass = r['human_avg_classification'] as Map<String, dynamic>?;
+    Map<String, dynamic>? _asClassMap(dynamic v) {
+      if (v is Map<String, dynamic>) return v;
+      if (v is String) return {'level': v, 'icon': '—'};
+      return null;
+    }
+    final userClass = _asClassMap(r['user_classification']);
+    final claudeClass = _asClassMap(r['claude_classification']);
+    final avgClass = _asClassMap(r['human_avg_classification']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1042,8 +1047,10 @@ class SophistryDial extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clamped = score.clamp(0.0, 100.0);
-    final angleDeg = (clamped / 100.0) * 180.0 - 90.0;
-    final angleRad = angleDeg * math.pi / 180.0;
+    // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
+    final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
+    final radius = math.min(size.width / 2, size.height) - 6;
+    final needleLen = radius * 0.72;
 
     return SizedBox(
       width: size.width,
@@ -1059,12 +1066,25 @@ class SophistryDial extends StatelessWidget {
             size: size,
             thresholds: const [0, 40, 70, 90],
           ),
+          // Needle — painted with canvas pivot at bottom-center (hub)
           Positioned(
-            bottom: 10,
-            child: _Needle(angleRad: angleRad),
+            bottom: 0,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: -math.pi / 2, end: angleRad),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutCubic,
+                builder: (_, a, __) => CustomPaint(
+                  size: size,
+                  painter: _NeedlePainter(angleRad: a, needleLength: needleLen),
+                ),
+              ),
+            ),
           ),
           Positioned(
-            bottom: 4,
+            bottom: -1,
             child: _Hub(),
           ),
         ],
@@ -1119,7 +1139,14 @@ class DialLabelOverlay extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black.withOpacity(0.65),
+                    color: Colors.white.withOpacity(0.88),
+                    shadows: const [
+                      Shadow(
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                        color: Color(0xAA000000),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1131,55 +1158,66 @@ class DialLabelOverlay extends StatelessWidget {
   }
 }
 
-class _Needle extends StatelessWidget {
-  final double angleRad;
-  const _Needle({required this.angleRad});
-
-  @override
-  Widget build(BuildContext context) {
-    final needle = SizedBox(
-      width: 6,
-      height: sizeForNeedle(context),
-      child: CustomPaint(painter: _NeedlePainter()),
-    );
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: -math.pi / 2, end: angleRad),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-      builder: (_, a, child) => Transform.rotate(angle: a, child: child),
-      child: needle,
-    );
-  }
-
-  double sizeForNeedle(BuildContext context) => 50;
-}
-
 class _NeedlePainter extends CustomPainter {
+  final double angleRad;
+  final double needleLength;
+
+  _NeedlePainter({required this.angleRad, required this.needleLength});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.85);
-    final path = Path()
-      ..moveTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
+    // Pivot at bottom-center of the dial (the hub point)
+    final pivot = Offset(size.width / 2, size.height);
+
+    canvas.save();
+    canvas.translate(pivot.dx, pivot.dy);
+    canvas.rotate(angleRad);
+
+    // Needle points upward from pivot (negative Y)
+    const halfW = 1.8;
+    final tip = -needleLength;
+
+    // Shadow
+    final shadowPath = Path()
+      ..moveTo(0, tip + 1)
+      ..lineTo(halfW + 0.4, 0)
+      ..lineTo(-halfW - 0.4, 0)
       ..close();
-    canvas.drawPath(path, paint);
+    canvas.drawPath(shadowPath, Paint()..color = const Color(0x44000000));
+
+    // Red needle
+    final needlePath = Path()
+      ..moveTo(0, tip)
+      ..lineTo(halfW, 0)
+      ..lineTo(-halfW, 0)
+      ..close();
+    canvas.drawPath(needlePath, Paint()..color = const Color(0xFFE53935));
+
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NeedlePainter old) =>
+      old.angleRad != angleRad || old.needleLength != needleLength;
 }
 
 class _Hub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 10,
-      height: 10,
+      width: 12,
+      height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.black.withOpacity(0.85),
+        color: const Color(0xFF0B0B0B),
+        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
       ),
     );
   }
@@ -1188,6 +1226,14 @@ class _Hub extends StatelessWidget {
 class _DialPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // Instrument panel background (dark, high-contrast)
+    final bg = Paint()..color = const Color(0xFF0B0B0B);
+    final panel = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(panel, bg);
+
     final center = Offset(size.width / 2, size.height);
     final radius = math.min(size.width / 2, size.height) - 6;
 
@@ -1195,29 +1241,67 @@ class _DialPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round
-      ..color = Colors.black.withOpacity(0.18);
+      ..color = const Color(0xFF1A1A1A);
 
     final rect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawArc(rect, math.pi, math.pi, false, arcPaint);
 
-    final tickPaint = Paint()
+    // Red zone overlay (high scores)
+    final redZonePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..color = Colors.black.withOpacity(0.45);
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xFF4A0B0B);
+    // 80..100 mapped onto 180deg sweep
+    final startA = math.pi + (80 / 100.0) * math.pi;
+    final sweepA = (20 / 100.0) * math.pi;
+    canvas.drawArc(rect, startA, sweepA, false, redZonePaint);
 
-    for (final t in [0, 40, 70, 90, 100]) {
+    // Ticks: minor/major with high contrast
+    for (int t = 0; t <= 100; t += 5) {
+      final isMajor = (t % 20 == 0);
+      final isMedium = (!isMajor && (t % 10 == 0));
+
+      final tickLen = isMajor
+          ? 14.0
+          : isMedium
+              ? 10.0
+              : 7.0;
+      final tickW = isMajor
+          ? 2.2
+          : isMedium
+              ? 1.6
+              : 1.1;
+
       final a = (t / 100.0) * math.pi;
       final ang = math.pi + a;
-      final p1 = Offset(
-        center.dx + (radius - 1) * math.cos(ang),
-        center.dy + (radius - 1) * math.sin(ang),
+      final pOuter = Offset(
+        center.dx + (radius - 0.5) * math.cos(ang),
+        center.dy + (radius - 0.5) * math.sin(ang),
       );
-      final p2 = Offset(
-        center.dx + (radius - 10) * math.cos(ang),
-        center.dy + (radius - 10) * math.sin(ang),
+      final pInner = Offset(
+        center.dx + (radius - tickLen) * math.cos(ang),
+        center.dy + (radius - tickLen) * math.sin(ang),
       );
-      canvas.drawLine(p1, p2, tickPaint);
+
+      final inRedZone = (t >= 80);
+      final tickPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = tickW
+        ..strokeCap = StrokeCap.round
+        ..color = inRedZone ? const Color(0xFFE53935) : Colors.white;
+
+      canvas.drawLine(pOuter, pInner, tickPaint);
     }
+
+    // A faint inner arc highlight for depth
+    final innerArcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..color = Colors.white.withOpacity(0.08);
+    final innerRect = Rect.fromCircle(center: center, radius: radius - 6);
+    canvas.drawArc(innerRect, math.pi, math.pi, false, innerArcPaint);
   }
 
   @override
