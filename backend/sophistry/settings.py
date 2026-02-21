@@ -55,13 +55,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "sophistry.wsgi.application"
 
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 PG_WRITER_HOST = os.getenv("PG_WRITER_HOST", "localhost")
 PG_READER_HOST = os.getenv("PG_READER_HOST", PG_WRITER_HOST)
 PG_PORT = os.getenv("PG_PORT", "5432")
 
 POSTGRES_DB = os.getenv("POSTGRES_DB", "sophistry")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "sophistry")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "20efaeb8cd301dee66aa15636533693a")
 
 POSTGRES_RO_USER = os.getenv("POSTGRES_RO_USER", "")
 POSTGRES_RO_PASSWORD = os.getenv("POSTGRES_RO_PASSWORD", "")
@@ -118,8 +118,8 @@ REST_FRAMEWORK = {
 }
 
 # ─── Scoring defaults ─────────────────────────────────────
-SOPHISTRY_MIN_WORDS = int(os.getenv("SCORING_MIN_WORDS", 42))
-SOPHISTRY_MIN_SENTENCES = int(os.getenv("SCORING_MIN_SENTENCES", 3))
+SOPHISTRY_MIN_WORDS = int(os.getenv("SCORING_MIN_WORDS", 23))
+SOPHISTRY_MIN_SENTENCES = int(os.getenv("SCORING_MIN_SENTENCES", 2))
 
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = "django-db"

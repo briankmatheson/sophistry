@@ -90,6 +90,17 @@ tag:
 release: tag ship
 	@echo "🚀 Released $(VERSION)!"
 
+# ─── check (show running images) ──────────────────────────
+check:
+	@echo "── Pods & images in $(NS) ──"
+	@kubectl get pods -n $(NS) -o custom-columns=\
+'POD:.metadata.name,STATUS:.status.phase,IMAGE:.status.containerStatuses[*].image' \
+	--no-headers 2>/dev/null | column -t
+	@echo ""
+	@echo "── Unique images ──"
+	@kubectl get pods -n $(NS) -o jsonpath='{range .items[*]}{range .status.containerStatuses[*]}{.image}{"\n"}{end}{end}' \
+	2>/dev/null | sort -u
+
 # ─── clean ────────────────────────────────────────────────
 clean:
 	$(MAKE) -C backend clean
@@ -116,14 +127,3 @@ apply:
 	kubectl rollout restart deploy -n sophistry
 # ─── roll ────────────────────────────────────────────────
 roll: release apply 
-
-# ─── check (show running images) ──────────────────────────
-check:
-	@echo "── Pods & images in $(NS) ──"
-	@kubectl get pods -n $(NS) -o custom-columns=\
-'POD:.metadata.name,STATUS:.status.phase,IMAGE:.status.containerStatuses[*].image' \
-	--no-headers 2>/dev/null | column -t
-	@echo ""
-	@echo "── Unique images ──"
-	@kubectl get pods -n $(NS) -o jsonpath='{range .items[*]}{range .status.containerStatuses[*]}{.image}{"\n"}{end}{end}' \
-	2>/dev/null | sort -u

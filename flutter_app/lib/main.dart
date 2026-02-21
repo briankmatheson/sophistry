@@ -113,8 +113,8 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // server info (fetched from /api/mobile/info)
   String backendVersion = '…';
-  int serverMinWords = 42;
-  int serverMinSentences = 3;
+  int serverMinWords = 23;
+  int serverMinSentences = 2;
 
   // test sets
   List<Map<String, dynamic>> testSets = [];
@@ -423,6 +423,8 @@ class _SophistryHomeState extends State<SophistryHome> {
       try {
         await api.resetSession();
       } catch (_) {}
+      // Clear cached .js / service worker so fresh assets load
+      clearWebCaches();
       reloadPage();
     }
   }

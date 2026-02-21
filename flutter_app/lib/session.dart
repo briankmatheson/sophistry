@@ -1,5 +1,6 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
+import 'dart:js' as js;
 
 const String kCookieName = 'sophistry_session';
 const String kRunUuidCookie = 'sophistry_run_uuid';
@@ -44,6 +45,24 @@ int getSavedProgress() {
 /// Reload the page (web only)
 void reloadPage() {
   html.window.location.reload();
+}
+
+/// Clear service worker registrations and CacheStorage (cached .js bundles)
+void clearWebCaches() {
+  try {
+    // Unregister all service workers
+    html.window.navigator.serviceWorker?.getRegistrations().then((regs) {
+      for (final reg in regs) {
+        reg.unregister();
+      }
+    });
+  } catch (_) {}
+  try {
+    // Delete all CacheStorage entries via JS eval
+    js.context.callMethod('eval', [
+      "if('caches' in window){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})})}"
+    ]);
+  } catch (_) {}
 }
 
 /// Save selected test set id
