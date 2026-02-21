@@ -356,10 +356,17 @@ def mobile_create_testcase(request):
         )
         test_set_id = unmod.id
 
+    sample_answer = request.data.get("sample_answer", "")
+
+    # Seed learned vocab from prompt + sample answer
+    learned = extract_from_prompt(prompt)
+    if sample_answer.strip():
+        learned = merge_answer_vocab(learned, sample_answer)
+
     tc = TestCase.objects.create(
         slug=slug, title=title, prompt=prompt,
         is_active=False, test_set_id=test_set_id,
-        learned_vocab=extract_from_prompt(prompt),
+        learned_vocab=learned,
     )
     return response.Response({"ok": True, "testcase_id": tc.id, "is_active": tc.is_active})
 

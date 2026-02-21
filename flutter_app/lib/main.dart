@@ -444,7 +444,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       builder: (ctx) => _AddQuestionSheet(
         titleCtl: titleCtl,
         promptCtl: promptCtl,
-        onSubmit: () async {
+        onSubmit: (sampleAnswer) async {
           final title = titleCtl.text.trim();
           final prompt = promptCtl.text.trim();
           if (prompt.isEmpty) return;
@@ -463,7 +463,10 @@ class _SophistryHomeState extends State<SophistryHome> {
             statusLine = 'Submitting question…';
           });
           try {
-            await api.submitTestcase(slug: slug, prompt: prompt, title: title);
+            await api.submitTestcase(
+              slug: slug, prompt: prompt, title: title,
+              sampleAnswer: sampleAnswer,
+            );
             setState(() => statusLine = 'Question submitted ✅');
           } catch (e) {
             setState(() => statusLine = 'Error: $e');
@@ -1127,7 +1130,7 @@ class _SophistryHomeState extends State<SophistryHome> {
 class _AddQuestionSheet extends StatefulWidget {
   final TextEditingController titleCtl;
   final TextEditingController promptCtl;
-  final VoidCallback onSubmit;
+  final Function(String sampleAnswer) onSubmit;
 
   const _AddQuestionSheet({
     required this.titleCtl,
@@ -1141,27 +1144,78 @@ class _AddQuestionSheet extends StatefulWidget {
 
 class _AddQuestionSheetState extends State<_AddQuestionSheet> {
   bool _canSubmit = false;
+  final _answerCtl = TextEditingController();
+  bool _checking = false;
+  Map<String, dynamic>? _checkResult;
+  String? _checkedHash;
+
+  bool get _editedSinceCheck =>
+      _checkedHash != null &&
+      _checkedHash != _answerCtl.text.trim().hashCode.toString();
 
   @override
   void initState() {
     super.initState();
     widget.promptCtl.addListener(_updateCanSubmit);
+    _answerCtl.addListener(_updateCanSubmit);
   }
 
   @override
   void dispose() {
     widget.promptCtl.removeListener(_updateCanSubmit);
+    _answerCtl.removeListener(_updateCanSubmit);
+    _answerCtl.dispose();
     super.dispose();
   }
 
   void _updateCanSubmit() {
-    final ok = widget.promptCtl.text.trim().isNotEmpty;
+    final promptOk = widget.promptCtl.text.trim().isNotEmpty;
+    final answerOk = _answerCtl.text.trim().isNotEmpty;
+    final checked = _checkResult != null && !_editedSinceCheck;
+    final ok = promptOk && answerOk && checked;
     if (ok != _canSubmit) setState(() => _canSubmit = ok);
+  }
+
+  Future<void> _check() async {
+    final prompt = widget.promptCtl.text.trim();
+    final answer = _answerCtl.text.trim();
+    if (prompt.isEmpty || answer.isEmpty) return;
+
+    setState(() {
+      _checking = true;
+      _checkResult = null;
+      _checkedHash = null;
+    });
+
+    try {
+      final result = await SophistryApi().validate(
+        prompt: prompt,
+        answer: answer,
+      );
+      if (mounted) {
+        setState(() {
+          _checkResult = result;
+          _checking = false;
+          _checkedHash = answer.hashCode.toString();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _checking = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    // Extract score for dial
+    double? dialScore;
+    if (_checkResult != null && _checkResult!['scored'] == true) {
+      final topScore = (_checkResult!['score'] as num?)?.toDouble() ?? 0;
+      dialScore = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
+    }
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -1196,8 +1250,8 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Propose a question for others to answer. '
-                  'Submissions are reviewed before going live.',
+                  'Propose a question and a sample answer. '
+                  'Use Check to test relevance before submitting.',
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 20),
@@ -1214,24 +1268,110 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Prompt field — the main event
+                // Prompt field
                 TextField(
                   controller: widget.promptCtl,
                   textCapitalization: TextCapitalization.sentences,
                   textInputAction: TextInputAction.newline,
                   maxLines: null,
-                  minLines: 6,
+                  minLines: 4,
                   decoration: const InputDecoration(
                     labelText: 'Question prompt *',
                     hintText:
                         'Write the full question you want people to answer.\n\n'
-                        'Good prompts are specific, thought-provoking, and '
-                        'ask for explanation or reasoning.',
+                        'Good prompts are specific and ask for explanation.',
                     border: OutlineInputBorder(),
                     alignLabelWithHint: true,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                // Answer field
+                TextField(
+                  controller: _answerCtl,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.newline,
+                  maxLines: null,
+                  minLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Sample answer *',
+                    hintText:
+                        'Write an answer to your question.\n'
+                        'This helps calibrate the scoring for this question.',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Check button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _checking ||
+                            widget.promptCtl.text.trim().isEmpty ||
+                            _answerCtl.text.trim().isEmpty
+                        ? null
+                        : _check,
+                    child: _checking
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Check relevance'),
+                  ),
+                ),
+                // Dial + score feedback
+                if (_checkResult != null) ...[
+                  const SizedBox(height: 12),
+                  AnimatedOpacity(
+                    opacity: _editedSinceCheck ? 0.45 : 1.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          if (dialScore != null) ...[
+                            SophistryDial(score: dialScore),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Relevance: ${dialScore.round()} / 100',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            ),
+                          ],
+                          // Explain lines
+                          if (_checkResult!['score_details'] != null) ...[
+                            const SizedBox(height: 4),
+                            ...(() {
+                              final sd = _checkResult!['score_details'] as Map<String, dynamic>? ?? {};
+                              final inner = sd['score_details'] as Map<String, dynamic>? ?? {};
+                              final explain = inner['explain'] as List<dynamic>? ?? [];
+                              return explain.take(3).map((e) => Text(
+                                    e.toString(),
+                                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                                    textAlign: TextAlign.center,
+                                  ));
+                            })(),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_editedSinceCheck)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_note, size: 14, color: Colors.orange[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Changed — re-check',
+                            style: TextStyle(fontSize: 11, color: Colors.orange[700]),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                const SizedBox(height: 20),
                 // Actions
                 Row(
                   children: [
@@ -1244,7 +1384,9 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: _canSubmit ? widget.onSubmit : null,
+                        onPressed: _canSubmit
+                            ? () => widget.onSubmit(_answerCtl.text.trim())
+                            : null,
                         child: const Text('Submit'),
                       ),
                     ),
@@ -1296,7 +1438,7 @@ class SophistryDial extends StatelessWidget {
               height: size.height,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: -math.pi / 2, end: angleRad),
-                duration: const Duration(milliseconds: 450),
+                duration: const Duration(milliseconds: 750),
                 curve: Curves.easeOutCubic,
                 builder: (_, a, __) => CustomPaint(
                   size: size,

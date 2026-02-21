@@ -131,11 +131,17 @@ class SophistryApi {
     required String slug,
     required String prompt,
     String title = '',
+    String sampleAnswer = '',
   }) async {
     final res = await http.post(
       _u('/api/mobile/testcase/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'slug': slug, 'prompt': prompt, 'title': title}),
+      body: jsonEncode({
+        'slug': slug,
+        'prompt': prompt,
+        'title': title,
+        'sample_answer': sampleAnswer,
+      }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw Exception('submitTestcase failed: ${res.statusCode} ${res.body}');
