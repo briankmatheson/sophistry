@@ -108,6 +108,7 @@ clean:
 
 # ─── secrets (never checked in, generated from env) ───────
 secret:
+	kubectl exec -n sophistry sophistry-pg-1 -- psql -U postgres -c "ALTER USER sophistry WITH PASSWORD '$$POSTGRES_PASSWORD';"
 	@[ -n "$$POSTGRES_PASSWORD" ] || (echo "ERROR: POSTGRES_PASSWORD not set" && exit 1)
 	kubectl create secret generic sophistry-db-secret \
 		--namespace $(NS) \

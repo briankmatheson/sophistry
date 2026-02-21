@@ -1276,7 +1276,7 @@ class SophistryDial extends StatelessWidget {
     // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
     final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
     final radius = math.min(size.width / 2, size.height) - 6;
-    final needleLen = radius * 0.72;
+    final needleLen = radius * 1.1;
 
     return SizedBox(
       width: size.width,
@@ -1359,7 +1359,7 @@ class DialLabelOverlay extends StatelessWidget {
                 child: Text(
                   _bandInfo[i].label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 6,
                     fontWeight: FontWeight.w800,
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [
