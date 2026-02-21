@@ -1148,6 +1148,9 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
   bool _checking = false;
   Map<String, dynamic>? _checkResult;
   String? _checkedHash;
+  int _promptWords = 0;
+  int _answerWords = 0;
+  static const _minWords = 23;
 
   bool get _editedSinceCheck =>
       _checkedHash != null &&
@@ -1156,16 +1159,30 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
   @override
   void initState() {
     super.initState();
-    widget.promptCtl.addListener(_updateCanSubmit);
-    _answerCtl.addListener(_updateCanSubmit);
+    widget.promptCtl.addListener(_onPromptChanged);
+    _answerCtl.addListener(_onAnswerChanged);
   }
 
   @override
   void dispose() {
-    widget.promptCtl.removeListener(_updateCanSubmit);
-    _answerCtl.removeListener(_updateCanSubmit);
+    widget.promptCtl.removeListener(_onPromptChanged);
+    _answerCtl.removeListener(_onAnswerChanged);
     _answerCtl.dispose();
     super.dispose();
+  }
+
+  void _onPromptChanged() {
+    final t = widget.promptCtl.text.trim();
+    final wc = t.isEmpty ? 0 : t.split(RegExp(r'\s+')).length;
+    if (wc != _promptWords) setState(() => _promptWords = wc);
+    _updateCanSubmit();
+  }
+
+  void _onAnswerChanged() {
+    final t = _answerCtl.text.trim();
+    final wc = t.isEmpty ? 0 : t.split(RegExp(r'\s+')).length;
+    if (wc != _answerWords) setState(() => _answerWords = wc);
+    _updateCanSubmit();
   }
 
   void _updateCanSubmit() {
@@ -1174,6 +1191,35 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
     final checked = _checkResult != null && !_editedSinceCheck;
     final ok = promptOk && answerOk && checked;
     if (ok != _canSubmit) setState(() => _canSubmit = ok);
+  }
+
+  Widget _wordBar(int count) {
+    final pct = (count / _minWords).clamp(0.0, 1.1);
+    final barValue = (pct / 1.1).clamp(0.0, 1.0);
+    final met = count >= _minWords;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: barValue,
+                minHeight: 5,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _darkslategray),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$count / $_minWords${met ? " ✓" : ""}',
+            style: TextStyle(fontSize: 10, color: met ? _green : Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _check() async {
@@ -1198,6 +1244,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
           _checking = false;
           _checkedHash = answer.hashCode.toString();
         });
+        _updateCanSubmit();
       }
     } catch (e) {
       if (mounted) {
@@ -1284,7 +1331,8 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                     alignLabelWithHint: true,
                   ),
                 ),
-                const SizedBox(height: 16),
+                _wordBar(_promptWords),
+                const SizedBox(height: 12),
                 // Answer field
                 TextField(
                   controller: _answerCtl,
@@ -1301,6 +1349,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                     alignLabelWithHint: true,
                   ),
                 ),
+                _wordBar(_answerWords),
                 const SizedBox(height: 12),
                 // Check button
                 SizedBox(
@@ -1317,7 +1366,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Check relevance'),
+                        : const Text('Check score'),
                   ),
                 ),
                 // Dial + score feedback
@@ -1333,7 +1382,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                             SophistryDial(score: dialScore),
                             const SizedBox(height: 4),
                             Text(
-                              'Relevance: ${dialScore.round()} / 100',
+                              'Score: ${dialScore.round()} / 100',
                               style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                             ),
                           ],
@@ -1418,7 +1467,7 @@ class SophistryDial extends StatelessWidget {
     // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
     final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
     final radius = math.min(size.width / 2, size.height) - 6;
-    final needleLen = radius * 1.1;
+    final needleLen = radius * 0.92;
 
     return SizedBox(
       width: size.width,
