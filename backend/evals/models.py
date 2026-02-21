@@ -2,6 +2,17 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+
+class TestSet(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.name
+
+
 class TestCase(models.Model):
     slug = models.SlugField(max_length=128, unique=True)
     title = models.CharField(max_length=200, blank=True, default="")
@@ -9,6 +20,10 @@ class TestCase(models.Model):
     expected = models.JSONField(blank=True, null=True)
     tags = models.JSONField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    test_set = models.ForeignKey(
+        TestSet, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="testcases",
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

@@ -32,8 +32,14 @@ class SophistryApi {
   }
 
   /// Create a new run, returns run_uuid
-  Future<String> createRun() async {
-    final res = await http.post(_u('/api/mobile/run/'));
+  Future<String> createRun({int? testSetId}) async {
+    final body = <String, dynamic>{};
+    if (testSetId != null) body['test_set_id'] = testSetId;
+    final res = await http.post(
+      _u('/api/mobile/run/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw Exception('createRun failed: ${res.statusCode} ${res.body}');
     }

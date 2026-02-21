@@ -94,7 +94,6 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // add testcase
   bool canAddTestcase = false;
-  final slugCtl = TextEditingController();
   final titleCtl = TextEditingController();
   final promptCtl = TextEditingController();
 
@@ -107,11 +106,19 @@ class _SophistryHomeState extends State<SophistryHome> {
   // check (validate-only) result — triggered by explicit button
   Map<String, dynamic>? checkResult;
   bool checking = false;
+  String? _checkedAnswerHash;  // hash of answer text at time of last check
+  bool get _editedSinceCheck =>
+      _checkedAnswerHash != null &&
+      _checkedAnswerHash != answerCtl.text.trim().hashCode.toString();
 
   // server info (fetched from /api/mobile/info)
   String backendVersion = '…';
   int serverMinWords = 42;
   int serverMinSentences = 3;
+
+  // test sets
+  List<Map<String, dynamic>> testSets = [];
+  int? selectedTestSetId;
 
   @override
   void initState() {
@@ -126,7 +133,6 @@ class _SophistryHomeState extends State<SophistryHome> {
     answerCtl.removeListener(_onAnswerChanged);
     answerCtl.dispose();
     answerFocus.dispose();
-    slugCtl.dispose();
     titleCtl.dispose();
     promptCtl.dispose();
     super.dispose();
@@ -177,14 +183,24 @@ class _SophistryHomeState extends State<SophistryHome> {
     // Fetch server constants (non-blocking)
     api.getInfo().then((info) {
       if (mounted) {
+        final sets = (info['test_sets'] as List<dynamic>?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ?? [];
         setState(() {
           backendVersion = info['version'] as String? ?? '?';
           serverMinWords = (info['min_words'] as num?)?.toInt() ?? 42;
           serverMinSentences = (info['min_sentences'] as num?)?.toInt() ?? 3;
+          testSets = sets;
+          // Restore saved selection, or default to first
+          final saved = getSavedTestSetId();
+          if (saved != null && sets.any((s) => (s['id'] as num).toInt() == saved)) {
+            selectedTestSetId = saved;
+          } else if (selectedTestSetId == null && sets.isNotEmpty) {
+            selectedTestSetId = (sets.first['id'] as num).toInt();
+          }
         });
       }
     }).catchError((_) {
-      // Fall back to getBackendVersion if info endpoint unavailable
       api.getBackendVersion().then((v) {
         if (mounted) setState(() => backendVersion = v);
       });
@@ -254,7 +270,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       statusLine = '';
     });
     try {
-      final uuid = await api.createRun();
+      final uuid = await api.createRun(testSetId: selectedTestSetId);
       final q = await api.getQuestion(uuid);
       setState(() {
         runUuid = uuid;
@@ -278,6 +294,7 @@ class _SophistryHomeState extends State<SophistryHome> {
     setState(() {
       checking = true;
       checkResult = null;
+      _checkedAnswerHash = null;
       statusLine = '';
     });
 
@@ -293,6 +310,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         setState(() {
           checkResult = result;
           checking = false;
+          _checkedAnswerHash = ans.hashCode.toString();
         });
       }
     } catch (e) {
@@ -329,6 +347,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       _wordCount = 0;
       previewResult = null;
       checkResult = null;
+      _checkedAnswerHash = null;
       saveProgress(questionsAnswered);
 
       if (questionsAnswered >= AppConfig.questionsPerSession) {
@@ -409,58 +428,47 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 
   Future<void> _addTestcase() async {
-    slugCtl.clear();
     titleCtl.clear();
     promptCtl.clear();
 
-    await showDialog(
+    final submitted = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add a question'),
-        content: SingleChildScrollView(
-          child: Column(children: [
-            TextField(
-                controller: slugCtl,
-                decoration: const InputDecoration(labelText: 'slug (e.g. my-question)')),
-            TextField(
-                controller: titleCtl,
-                decoration: const InputDecoration(labelText: 'title (optional)')),
-            TextField(
-                controller: promptCtl,
-                maxLines: 6,
-                decoration: const InputDecoration(labelText: 'question prompt')),
-            const SizedBox(height: 8),
-            const Text('Submissions are inactive until moderated.',
-                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-          ]),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              final slug = slugCtl.text.trim();
-              final prompt = promptCtl.text.trim();
-              final title = titleCtl.text.trim();
-              if (slug.isEmpty || prompt.isEmpty) return;
-              Navigator.pop(ctx);
-              setState(() {
-                busy = true;
-                statusLine = 'Submitting question…';
-              });
-              try {
-                await api.submitTestcase(
-                    slug: slug, prompt: prompt, title: title);
-                setState(() => statusLine = 'Question submitted ✅');
-              } catch (e) {
-                setState(() => statusLine = 'Error: $e');
-              } finally {
-                setState(() => busy = false);
-              }
-            },
-            child: const Text('Submit'),
-          ),
-        ],
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: const Color(0xFFFBFBF8),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _AddQuestionSheet(
+        titleCtl: titleCtl,
+        promptCtl: promptCtl,
+        onSubmit: () async {
+          final title = titleCtl.text.trim();
+          final prompt = promptCtl.text.trim();
+          if (prompt.isEmpty) return;
+          // Auto-generate slug from title (or first words of prompt)
+          final base = title.isNotEmpty ? title : prompt;
+          final slug = base
+              .toLowerCase()
+              .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
+              .trim()
+              .split(RegExp(r'\s+'))
+              .take(5)
+              .join('-');
+          Navigator.pop(ctx, true);
+          setState(() {
+            busy = true;
+            statusLine = 'Submitting question…';
+          });
+          try {
+            await api.submitTestcase(slug: slug, prompt: prompt, title: title);
+            setState(() => statusLine = 'Question submitted ✅');
+          } catch (e) {
+            setState(() => statusLine = 'Error: $e');
+          } finally {
+            setState(() => busy = false);
+          }
+        },
       ),
     );
   }
@@ -508,48 +516,109 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // ─── QUESTION FLOW ─────────────────────────────────────
   Widget _buildQuestionFlow() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // progress
-          _progressBar(),
-          const SizedBox(height: 12),
-          // question card
-          Expanded(
-            child: Card(
-              elevation: 2,
-              color: Colors.white.withOpacity(0.85),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: currentQuestion == null
-                    ? Center(child: Text(statusLine.isEmpty ? 'No questions' : statusLine))
-                    : Column(
+    final bool validationPassed = checkResult != null &&
+        (checkResult!['validation'] as Map<String, dynamic>?)?['ok'] == true;
+    final bool canSubmit = !busy &&
+        currentQuestion != null &&
+        validationPassed &&
+        !_editedSinceCheck;
+
+    return Column(
+      children: [
+        // ── Scrollable content area ──────────────────
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // test set picker
+                if (testSets.length > 1) ...[
+                  _testSetDropdown(),
+                  const SizedBox(height: 10),
+                ],
+                // question card
+                if (currentQuestion != null) ...[
+                  Card(
+                    elevation: 2,
+                    color: Colors.white.withOpacity(0.85),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Question ${questionsAnswered + 1} of ${AppConfig.questionsPerSession}',
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             currentQuestion!['title'] ?? currentQuestion!['slug'] ?? '',
-                            style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 12),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: Text(
-                                currentQuestion!['prompt'] ?? '',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ),
+                          Text(
+                            currentQuestion!['prompt'] ?? '',
+                            style: const TextStyle(fontSize: 16),
                           ),
                         ],
                       ),
-              ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // answer input — auto-expanding
+                  KeyboardListener(
+                    focusNode: FocusNode(),
+                    onKeyEvent: (event) {
+                      if (event is KeyDownEvent &&
+                          event.logicalKey == LogicalKeyboardKey.enter &&
+                          HardwareKeyboard.instance.isControlPressed &&
+                          canSubmit) {
+                        _submitAnswer();
+                      }
+                    },
+                    child: TextField(
+                      controller: answerCtl,
+                      focusNode: answerFocus,
+                      autofocus: true,
+                      enabled: !busy && currentQuestion != null,
+                      maxLines: null,
+                      minLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Your answer',
+                        border: OutlineInputBorder(),
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // dial + feedback area
+                  if (checkResult != null) _buildCheckResult(),
+                  if (previewResult != null && checkResult == null) _buildPreviewFeedback(),
+                  // edited-since-check warning
+                  if (_editedSinceCheck && checkResult != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_note, size: 16, color: Colors.orange[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Answer changed — re-check score',
+                            style: TextStyle(fontSize: 11, color: Colors.orange[700], fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                ] else
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(statusLine.isEmpty ? 'No questions' : statusLine),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -599,14 +668,98 @@ class _SophistryHomeState extends State<SophistryHome> {
                   onPressed: busy || currentQuestion == null ? null : _submitAnswer,
                   child: Text(busy ? 'Submitting…' : 'Submit'),
                 ),
+        ),
+        // ── Sticky bottom action bar ─────────────────
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBFBF8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 6,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
-          if (statusLine.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(statusLine, style: const TextStyle(fontSize: 12)),
-          ],
-        ],
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _progressBar(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: busy || checking || answerCtl.text.trim().isEmpty
+                            ? null
+                            : _checkAnswer,
+                        child: checking
+                            ? const SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Check'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: canSubmit ? _submitAnswer : null,
+                        child: Text(busy ? 'Submitting…' : 'Submit'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (statusLine.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(statusLine, style: const TextStyle(fontSize: 11)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _testSetDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _darkslategray.withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: selectedTestSetId,
+          isExpanded: true,
+          isDense: true,
+          icon: Icon(Icons.unfold_more, size: 18, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+          items: testSets.map((ts) {
+            return DropdownMenuItem<int>(
+              value: (ts['id'] as num).toInt(),
+              child: Text(
+                ts['name'] as String? ?? '—',
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: busy
+              ? null
+              : (id) {
+                  if (id != null && id != selectedTestSetId) {
+                    setState(() => selectedTestSetId = id);
+                    saveTestSetId(id);
+                    clearRunUuid();
+                    _startNewRun();
+                  }
+                },
+        ),
       ),
     );
   }
@@ -722,37 +875,44 @@ class _SophistryHomeState extends State<SophistryHome> {
     final sc = validation['sentence_count'] ?? 0;
     final minW = validation['min_words'] ?? 42;
     final minS = validation['min_sentences'] ?? 3;
+    final stale = _editedSinceCheck;
 
     // If scored, extract the structural score for the dial
     double? dialScore;
     if (scored) {
       final topScore = (checkResult?['score'] as num?)?.toDouble() ?? 0;
+<<<<<<< HEAD
       // score is 0..1 from backend
+=======
+>>>>>>> bf5b758 (add set dropdown and fix entry)
       dialScore = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
     }
 
-    return AnimatedSize(
+    return AnimatedOpacity(
+      opacity: stale ? 0.45 : 1.0,
       duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: allOk
-              ? _green.withOpacity(0.06)
-              : Colors.orange.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
             color: allOk
-                ? _green.withOpacity(0.3)
-                : Colors.orange.withOpacity(0.3),
+                ? _green.withOpacity(0.06)
+                : Colors.orange.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: allOk
+                  ? _green.withOpacity(0.3)
+                  : Colors.orange.withOpacity(0.3),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Validation row
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Validation row
             Row(
               children: [
                 Icon(
@@ -825,6 +985,7 @@ class _SophistryHomeState extends State<SophistryHome> {
             ],
           ],
         ),
+      ),
       ),
     );
   }
@@ -1024,6 +1185,142 @@ class _SophistryHomeState extends State<SophistryHome> {
   }
 }
 
+// ─── Add Question Sheet (mobile-friendly) ──────────────────
+class _AddQuestionSheet extends StatefulWidget {
+  final TextEditingController titleCtl;
+  final TextEditingController promptCtl;
+  final VoidCallback onSubmit;
+
+  const _AddQuestionSheet({
+    required this.titleCtl,
+    required this.promptCtl,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_AddQuestionSheet> createState() => _AddQuestionSheetState();
+}
+
+class _AddQuestionSheetState extends State<_AddQuestionSheet> {
+  bool _canSubmit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.promptCtl.addListener(_updateCanSubmit);
+  }
+
+  @override
+  void dispose() {
+    widget.promptCtl.removeListener(_updateCanSubmit);
+    super.dispose();
+  }
+
+  void _updateCanSubmit() {
+    final ok = widget.promptCtl.text.trim().isNotEmpty;
+    if (ok != _canSubmit) setState(() => _canSubmit = ok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (ctx, scrollCtl) => SingleChildScrollView(
+          controller: scrollCtl,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[350],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Header
+                const Text(
+                  'Submit a Question',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Propose a question for others to answer. '
+                  'Submissions are reviewed before going live.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 20),
+                // Title field
+                TextField(
+                  controller: widget.titleCtl,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Title',
+                    hintText: 'e.g. The Ship of Theseus',
+                    border: OutlineInputBorder(),
+                    helperText: 'A short name for this question (optional)',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Prompt field — the main event
+                TextField(
+                  controller: widget.promptCtl,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.newline,
+                  maxLines: null,
+                  minLines: 6,
+                  decoration: const InputDecoration(
+                    labelText: 'Question prompt *',
+                    hintText:
+                        'Write the full question you want people to answer.\n\n'
+                        'Good prompts are specific, thought-provoking, and '
+                        'ask for explanation or reasoning.',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _canSubmit ? widget.onSubmit : null,
+                        child: const Text('Submit'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Sophistry Dial (instrument-style) ────────────────────
 class SophistryDial extends StatelessWidget {
   final double score; // expected 0..100
@@ -1039,7 +1336,10 @@ class SophistryDial extends StatelessWidget {
   Widget build(BuildContext context) {
     final clamped = score.clamp(0.0, 100.0);
     // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
+<<<<<<< HEAD
     // Map to radians: 0→-π/2, 50→0, 100→+π/2
+=======
+>>>>>>> bf5b758 (add set dropdown and fix entry)
     final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
     final radius = math.min(size.width / 2, size.height) - 6;
     final needleLen = radius * 0.72;
@@ -1059,10 +1359,14 @@ class SophistryDial extends StatelessWidget {
             thresholds: const [0, 40, 70, 90],
           ),
 <<<<<<< HEAD
+<<<<<<< HEAD
           // Needle — pivot at bottom-center of the SizedBox via Alignment
 =======
           // Needle — painted with canvas pivot at bottom-center (hub)
 >>>>>>> ae1c73a (.)
+=======
+          // Needle — painted with canvas pivot at bottom-center (hub)
+>>>>>>> bf5b758 (add set dropdown and fix entry)
           Positioned(
             bottom: 0,
             child: SizedBox(
@@ -1137,9 +1441,12 @@ class DialLabelOverlay extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
 <<<<<<< HEAD
+<<<<<<< HEAD
                     // Designed to sit on a dark, instrument-style dial.
 =======
 >>>>>>> ae1c73a (.)
+=======
+>>>>>>> bf5b758 (add set dropdown and fix entry)
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [
                       Shadow(
@@ -1168,10 +1475,14 @@ class _NeedlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Hub/pivot is at bottom-center of the dial
 =======
     // Pivot at bottom-center of the dial (the hub point)
 >>>>>>> ae1c73a (.)
+=======
+    // Pivot at bottom-center of the dial (the hub point)
+>>>>>>> bf5b758 (add set dropdown and fix entry)
     final pivot = Offset(size.width / 2, size.height);
 
     canvas.save();

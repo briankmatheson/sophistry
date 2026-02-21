@@ -6,8 +6,8 @@ from rest_framework import decorators, response, status, viewsets
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import TestCase, Run, Result
-from .serializers import TestCaseSerializer, RunSerializer, ResultSerializer
+from .models import TestSet, TestCase, Run, Result
+from .serializers import TestSetSerializer, TestCaseSerializer, RunSerializer, ResultSerializer
 from evals.tasks import score_run
 
 def perform_create(self, serializer):
@@ -22,11 +22,17 @@ def home(request):
 def mobile_info(request):
     """Read-only constants the client needs."""
     from django.conf import settings as _s
+    test_sets = list(
+        TestSet.objects.filter(is_active=True)
+        .order_by("name")
+        .values("id", "name", "description")
+    )
     return response.Response({
         "version": os.environ.get("APP_VERSION", "dev"),
         "min_words": _s.SOPHISTRY_MIN_WORDS,
         "min_sentences": _s.SOPHISTRY_MIN_SENTENCES,
         "questions_per_session": int(os.environ.get("QUESTIONS_PER_SESSION", 4)),
+        "test_sets": test_sets,
     })
 
 
@@ -61,7 +67,16 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
 
 @decorators.api_view(["POST"])
 def mobile_create_run(request):
-    run = Run.objects.create(name="mobile", notes="anonymized mobile run", status="created")
+    test_set_id = request.data.get("test_set_id")
+    filters = {}
+    if test_set_id:
+        filters["test_set_id"] = int(test_set_id)
+    run = Run.objects.create(
+        name="mobile",
+        notes="anonymized mobile run",
+        status="created",
+        filters=filters or None,
+    )
     return response.Response({"run_uuid": str(run.run_uuid)})
 
 
@@ -71,12 +86,23 @@ def mobile_question(request):
     if not run_uuid:
         return response.Response({"detail": "run_uuid required"}, status=400)
 
+    # Resolve test_set_id from query param or from the run's filters
+    test_set_id = request.query_params.get("test_set_id")
+    if not test_set_id:
+        try:
+            run = Run.objects.get(run_uuid=run_uuid)
+            test_set_id = (run.filters or {}).get("test_set_id")
+        except Run.DoesNotExist:
+            pass
+
     # Exclude questions already answered in this run
     answered_ids = list(
         Result.objects.filter(run_uuid=run_uuid, provider="human")
         .values_list("testcase_id", flat=True)
     )
     remaining = TestCase.objects.filter(is_active=True).exclude(id__in=answered_ids)
+    if test_set_id:
+        remaining = remaining.filter(test_set_id=int(test_set_id))
     ids = list(remaining.values_list("id", flat=True))
 
     if not ids:
@@ -226,10 +252,22 @@ def mobile_create_testcase(request):
     slug = request.data.get("slug")
     prompt = request.data.get("prompt")
     title = request.data.get("title", "")
+    test_set_id = request.data.get("test_set_id")
     if not slug or not prompt:
         return response.Response({"detail": "slug and prompt required"}, status=400)
 
-    tc = TestCase.objects.create(slug=slug, title=title, prompt=prompt, is_active=False)
+    # User submissions go to "unmoderated" set by default
+    if not test_set_id:
+        unmod, _ = TestSet.objects.get_or_create(
+            name="unmoderated",
+            defaults={"description": "User-submitted questions awaiting review", "is_active": False},
+        )
+        test_set_id = unmod.id
+
+    tc = TestCase.objects.create(
+        slug=slug, title=title, prompt=prompt,
+        is_active=False, test_set_id=test_set_id,
+    )
     return response.Response({"ok": True, "testcase_id": tc.id, "is_active": tc.is_active})
 
 

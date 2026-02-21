@@ -4,6 +4,7 @@ import 'dart:html' as html;
 const String kCookieName = 'sophistry_session';
 const String kRunUuidCookie = 'sophistry_run_uuid';
 const String kProgressCookie = 'sophistry_progress';
+const String kTestSetCookie = 'sophistry_test_set';
 
 /// Read the session UUID from cookie
 String? getSessionId() {
@@ -43,6 +44,19 @@ int getSavedProgress() {
 /// Reload the page (web only)
 void reloadPage() {
   html.window.location.reload();
+}
+
+/// Save selected test set id
+void saveTestSetId(int id) {
+  html.document.cookie =
+      '$kTestSetCookie=$id; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax';
+}
+
+/// Read selected test set id
+int? getSavedTestSetId() {
+  final val = _readCookie(kTestSetCookie);
+  if (val == null) return null;
+  return int.tryParse(val);
 }
 
 String? _readCookie(String name) {
