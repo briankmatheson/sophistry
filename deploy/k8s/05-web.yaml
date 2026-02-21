@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: briankmatheson/sophistry-web:0.8.5-dirty
+          image: briankmatheson/sophistry-web:0.8.6
           ports:
             - name: http
               containerPort: 80
