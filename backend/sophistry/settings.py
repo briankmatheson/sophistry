@@ -61,7 +61,6 @@ PG_PORT = os.getenv("PG_PORT", "5432")
 
 POSTGRES_DB = os.getenv("POSTGRES_DB", "sophistry")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "sophistry")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "20efaeb8cd301dee66aa15636533693a")
 
 POSTGRES_RO_USER = os.getenv("POSTGRES_RO_USER", "")
 POSTGRES_RO_PASSWORD = os.getenv("POSTGRES_RO_PASSWORD", "")
