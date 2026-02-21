@@ -621,53 +621,6 @@ class _SophistryHomeState extends State<SophistryHome> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          // answer input
-          KeyboardListener(
-            focusNode: FocusNode(),
-            onKeyEvent: (event) {
-              if (event is KeyDownEvent &&
-                  event.logicalKey == LogicalKeyboardKey.enter &&
-                  HardwareKeyboard.instance.isControlPressed &&
-                  !busy &&
-                  currentQuestion != null) {
-                _submitAnswer();
-              }
-            },
-            child: TextField(
-              controller: answerCtl,
-              focusNode: answerFocus,
-              autofocus: true,
-              enabled: !busy && currentQuestion != null,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Your answer',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          // ─── live preview ───────────────────────────────
-          if (previewResult != null) _buildPreviewFeedback(),
-          // ─── check result (explicit validate) ───────────
-          if (checkResult != null) _buildCheckResult(),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              // Expanded(
-              //   child: OutlinedButton(
-              //     onPressed: busy || checking || answerCtl.text.trim().isEmpty
-              //         ? null
-              //         : _checkAnswer,
-              //     child: Text(checking ? 'Checking…' : 'Check'),
-              //   ),
-              // ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: busy || currentQuestion == null ? null : _submitAnswer,
-                  child: Text(busy ? 'Submitting…' : 'Submit'),
-                ),
         ),
         // ── Sticky bottom action bar ─────────────────
         Container(
@@ -796,15 +749,23 @@ class _SophistryHomeState extends State<SophistryHome> {
 
   // ─── LIVE PREVIEW FEEDBACK ──────────────────────────────
   Widget _buildPreviewFeedback() {
-    // API shape: { score: 0.xx, score_details: { score: 0.xx, score_details: { structural_score, explain, ... } } }
-    final topScore = (previewResult?['score'] as num?)?.toDouble() ?? 0;
-    final score0100 = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
-
-    final inner = (previewResult?['score_details'] as Map<String, dynamic>?);
-    final structural = (inner?['score_details'] as Map<String, dynamic>?) ?? {};
-    final explain = (structural['explain'] as List<dynamic>?)?.cast<String>() ?? [];
-
-    String band;
+    // score_details from API contains the structural_scoring payload
+    final scoreDetails = previewResult?['score_details'] as Map<String, dynamic>? ?? {};
+    final innerDetails = scoreDetails['score_details'] as Map<String, dynamic>? ?? {};
+    // structural_score is 0..1
+    final rawScore = (innerDetails['structural_score'] as num?)?.toDouble() ??
+        (scoreDetails['score'] as num?)?.toDouble() ??
+        0;
+    final score0100 = rawScore <= 1.0 ? rawScore * 100.0 : rawScore;
+    // Extract explain lines for coaching notes
+    final explain = (innerDetails['explain'] as List<dynamic>?)?.cast<String>() ?? [];
+    // Fallback: old-style notes
+    final notes = explain.isNotEmpty
+        ? explain
+        : (scoreDetails['notes'] as List<dynamic>?)?.cast<String>() ?? [];
+    // Band from flags
+    final flags = innerDetails['flags'] as Map<String, dynamic>?;
+    String band = '';
     if (score0100 >= 90) {
       band = 'UNDERSTANDING';
     } else if (score0100 >= 70) {
@@ -845,9 +806,9 @@ class _SophistryHomeState extends State<SophistryHome> {
                       color: _darkslategray.withOpacity(0.8),
                     ),
                   ),
-                  if (explain.isNotEmpty) ...[
+                  if (notes.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    ...explain.take(3).map((n) => Padding(
+                    ...notes.map((n) => Padding(
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         n,
@@ -881,10 +842,6 @@ class _SophistryHomeState extends State<SophistryHome> {
     double? dialScore;
     if (scored) {
       final topScore = (checkResult?['score'] as num?)?.toDouble() ?? 0;
-<<<<<<< HEAD
-      // score is 0..1 from backend
-=======
->>>>>>> bf5b758 (add set dropdown and fix entry)
       dialScore = (topScore <= 1.0 ? topScore * 100.0 : topScore).clamp(0.0, 100.0);
     }
 
@@ -1336,10 +1293,6 @@ class SophistryDial extends StatelessWidget {
   Widget build(BuildContext context) {
     final clamped = score.clamp(0.0, 100.0);
     // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
-<<<<<<< HEAD
-    // Map to radians: 0→-π/2, 50→0, 100→+π/2
-=======
->>>>>>> bf5b758 (add set dropdown and fix entry)
     final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
     final radius = math.min(size.width / 2, size.height) - 6;
     final needleLen = radius * 0.72;
@@ -1358,15 +1311,7 @@ class SophistryDial extends StatelessWidget {
             size: size,
             thresholds: const [0, 40, 70, 90],
           ),
-<<<<<<< HEAD
-<<<<<<< HEAD
-          // Needle — pivot at bottom-center of the SizedBox via Alignment
-=======
           // Needle — painted with canvas pivot at bottom-center (hub)
->>>>>>> ae1c73a (.)
-=======
-          // Needle — painted with canvas pivot at bottom-center (hub)
->>>>>>> bf5b758 (add set dropdown and fix entry)
           Positioned(
             bottom: 0,
             child: SizedBox(
@@ -1383,7 +1328,6 @@ class SophistryDial extends StatelessWidget {
               ),
             ),
           ),
-          // Hub cap
           Positioned(
             bottom: -1,
             child: _Hub(),
@@ -1440,13 +1384,6 @@ class DialLabelOverlay extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    // Designed to sit on a dark, instrument-style dial.
-=======
->>>>>>> ae1c73a (.)
-=======
->>>>>>> bf5b758 (add set dropdown and fix entry)
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [
                       Shadow(
@@ -1474,15 +1411,7 @@ class _NeedlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    // Hub/pivot is at bottom-center of the dial
-=======
     // Pivot at bottom-center of the dial (the hub point)
->>>>>>> ae1c73a (.)
-=======
-    // Pivot at bottom-center of the dial (the hub point)
->>>>>>> bf5b758 (add set dropdown and fix entry)
     final pivot = Offset(size.width / 2, size.height);
 
     canvas.save();
