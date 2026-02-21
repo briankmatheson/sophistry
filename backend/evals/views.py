@@ -36,6 +36,57 @@ def mobile_info(request):
     })
 
 
+
+@decorators.api_view(["GET"])
+def mobile_question_sets(request):
+    """Return available question sets for dropdowns.
+
+    Optional query param:
+      - run_uuid: include answered counts for that run (human provider).
+    """
+    run_uuid = request.query_params.get("run_uuid")
+
+    answered_ids = set()
+    if run_uuid:
+        answered_ids = set(
+            Result.objects.filter(run_uuid=run_uuid, provider="human")
+            .values_list("testcase_id", flat=True)
+        )
+
+    sets = []
+    qs = TestSet.objects.all().order_by("name")
+    for s in qs:
+        total = TestCase.objects.filter(is_active=True, test_set=s).count()
+        if total == 0 and s.is_active is False:
+            # hide empty + inactive sets
+            continue
+        answered = 0
+        if answered_ids:
+            answered = TestCase.objects.filter(id__in=answered_ids, test_set=s).count()
+        sets.append({
+            "id": s.id,
+            "name": s.name,
+            "description": s.description,
+            "is_active": s.is_active,
+            "count": total,
+            "answered": answered,
+        })
+
+    # Pseudo-set: all active questions
+    all_total = TestCase.objects.filter(is_active=True).count()
+    all_answered = len(answered_ids) if answered_ids else 0
+    sets.insert(0, {
+        "id": None,
+        "name": "all",
+        "description": "All active questions",
+        "is_active": True,
+        "count": all_total,
+        "answered": all_answered,
+    })
+
+    return response.Response({"ok": True, "sets": sets})
+
+
 class TestCaseViewSet(viewsets.ModelViewSet):
     queryset = TestCase.objects.all().order_by("id")
     serializer_class = TestCaseSerializer
@@ -68,9 +119,16 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
 @decorators.api_view(["POST"])
 def mobile_create_run(request):
     test_set_id = request.data.get("test_set_id")
+    test_set_name = request.data.get("test_set") or request.data.get("set")
     filters = {}
     if test_set_id:
         filters["test_set_id"] = int(test_set_id)
+    elif test_set_name:
+        try:
+            ts = TestSet.objects.get(name=str(test_set_name))
+            filters["test_set_id"] = int(ts.id)
+        except TestSet.DoesNotExist:
+            pass
     run = Run.objects.create(
         name="mobile",
         notes="anonymized mobile run",
@@ -87,7 +145,24 @@ def mobile_question(request):
         return response.Response({"detail": "run_uuid required"}, status=400)
 
     # Resolve test_set_id from query param or from the run's filters
+    # Supported params:
+    #   - test_set_id=<int>
+    #   - test_set=<name>  (e.g. "Quantum Mechanics" or "benchmark")
+    #   - set=<name>       (alias)
     test_set_id = request.query_params.get("test_set_id")
+    test_set_name = request.query_params.get("test_set") or request.query_params.get("set")
+
+    if test_set_name:
+        if test_set_name.strip().lower() == "all":
+            test_set_id = None
+        elif not test_set_id:
+            try:
+                ts = TestSet.objects.get(name=test_set_name)
+                test_set_id = ts.id
+            except TestSet.DoesNotExist:
+                # ignore unknown set name (acts like "all")
+                test_set_id = None
+
     if not test_set_id:
         try:
             run = Run.objects.get(run_uuid=run_uuid)
@@ -253,6 +328,7 @@ def mobile_create_testcase(request):
     prompt = request.data.get("prompt")
     title = request.data.get("title", "")
     test_set_id = request.data.get("test_set_id")
+    test_set_name = request.data.get("test_set") or request.data.get("set")
     if not slug or not prompt:
         return response.Response({"detail": "slug and prompt required"}, status=400)
 

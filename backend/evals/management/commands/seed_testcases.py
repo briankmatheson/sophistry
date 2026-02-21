@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from evals.models import TestCase
+from evals.models import TestCase, TestSet
 
 DEFAULT_SEED_PATH = Path(__file__).resolve().parents[3] / "seed_data" / "testcases.json"
 
@@ -16,6 +16,46 @@ def _env_truthy(name: str) -> bool:
     if v is None:
         return False
     return v.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+
+from typing import Optional
+
+def infer_test_set_name(item: dict) -> Optional[str]:
+    # explicit wins
+    ts = item.get("test_set") or item.get("test_set_name")
+    if isinstance(ts, str) and ts.strip():
+        return ts.strip()
+
+    tags = item.get("tags") or []
+    if not isinstance(tags, list):
+        tags = []
+
+    # common tag -> set name mapping
+    tag_map = {
+        "quantum-mechanics": "Quantum Mechanics",
+        "phlogiston": "Phlogiston",
+        "sociobiology": "Sociobiology",
+        "socio-biology": "Sociobiology",
+        "philosophy": "Philosophy",
+        "cs": "Computer Science",
+        "math": "Mathematics",
+        "science": "Science",
+    }
+    for tag in tags:
+        if not isinstance(tag, str):
+            continue
+        if tag in tag_map:
+            return tag_map[tag]
+
+    # fallback: if tag looks like a set, promote it
+    for tag in tags:
+        if isinstance(tag, str) and tag and len(tag) <= 40 and "-" in tag:
+            # e.g. "quantum-mechanics" -> "Quantum Mechanics"
+            return tag.replace("-", " ").title()
+
+    return None
+
 
 
 class Command(BaseCommand):
@@ -84,7 +124,12 @@ class Command(BaseCommand):
                     raise CommandError("Each seed entry must include a non-empty 'slug'")
 
                 data = normalize(item)
-                obj, was_created = TestCase.objects.get_or_create(slug=slug, defaults=data)
+                test_set_name = data.pop('test_set_name', None)
+                test_set_obj = None
+                if test_set_name:
+                    test_set_obj, _ = TestSet.objects.get_or_create(name=test_set_name, defaults={'description': f'Seeded set: {test_set_name}', 'is_active': True})
+
+                obj, was_created = TestCase.objects.get_or_create(slug=slug, defaults={**data, **({'test_set': test_set_obj} if test_set_obj else {})})
 
                 if was_created:
                     created += 1
@@ -97,6 +142,12 @@ class Command(BaseCommand):
                     if getattr(obj, field) != value:
                         dirty = True
                         setattr(obj, field, value)
+
+                # test_set handling
+                desired_ts_id = test_set_obj.id if test_set_obj else None
+                if obj.test_set_id != desired_ts_id:
+                    dirty = True
+                    obj.test_set = test_set_obj
 
                 if dirty:
                     updated += 1

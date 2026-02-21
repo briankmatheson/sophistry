@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import math
+from collections import Counter
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, Any, Optional
 
@@ -25,6 +27,38 @@ def _normalize(text: str) -> str:
     # normalize punctuation spacing a bit
     t = re.sub(r"\s+", " ", t)
     return t
+
+
+
+def _tokenize(text: str) -> List[str]:
+    """Deterministic tokenization for anti-gaming signals."""
+    t = _normalize(text)
+    # keep alphabetic-ish tokens; treat hyphens as separators
+    t = re.sub(r"[^a-z0-9\s]", " ", t)
+    toks = [w for w in t.split() if w]
+    return toks
+
+
+def _lexical_diversity(tokens: List[str]) -> float:
+    if not tokens:
+        return 0.0
+    return len(set(tokens)) / float(len(tokens))
+
+
+def _max_token_share(tokens: List[str]) -> float:
+    if not tokens:
+        return 0.0
+    c = Counter(tokens)
+    most = c.most_common(1)[0][1]
+    return most / float(len(tokens))
+
+
+def _max_ngram_repeats(tokens: List[str], n: int = 3) -> int:
+    if len(tokens) < n:
+        return 0
+    grams = [" ".join(tokens[i:i+n]) for i in range(0, len(tokens)-n+1)]
+    c = Counter(grams)
+    return c.most_common(1)[0][1] if grams else 0
 
 
 def _compile_patterns(patterns: List[str]) -> List[re.Pattern]:
