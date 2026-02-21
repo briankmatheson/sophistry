@@ -55,6 +55,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "sophistry.wsgi.application"
 
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 PG_WRITER_HOST = os.getenv("PG_WRITER_HOST", "localhost")
 PG_READER_HOST = os.getenv("PG_READER_HOST", PG_WRITER_HOST)
 PG_PORT = os.getenv("PG_PORT", "5432")
