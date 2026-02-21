@@ -17,6 +17,7 @@ from django.conf import settings
 
 from .structural import score_structural
 from .structural_scoring import load_vocab, score_structural_alignment
+from .vocab_learner import overlay_vocab
 
 _VOCAB = None
 
@@ -30,8 +31,11 @@ def _get_vocab() -> dict:
     return _VOCAB
 
 
-def score_case(prompt: str, model_answer: str) -> dict:
-    structural = score_structural_alignment(prompt, model_answer, _get_vocab())
+def score_case(prompt: str, model_answer: str, learned_vocab: dict | None = None, question_slug: str = "q") -> dict:
+    vocab = _get_vocab()
+    if learned_vocab:
+        vocab = overlay_vocab(vocab, learned_vocab, question_slug)
+    structural = score_structural_alignment(prompt, model_answer, vocab)
     return {
         "score": structural["structural_score"],
         "score_details": structural,

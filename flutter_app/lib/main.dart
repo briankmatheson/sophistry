@@ -620,30 +620,8 @@ class _SophistryHomeState extends State<SophistryHome> {
                       child: Text(statusLine.isEmpty ? 'No questions' : statusLine),
                     ),
                   ),
-              ],
-            ),
-          ),
-        ),
-        // ── Sticky bottom action bar ─────────────────
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFBFBF8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 6,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _progressBar(),
-                const SizedBox(height: 8),
+                // Buttons inline at bottom of scroll
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -672,6 +650,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                   const SizedBox(height: 6),
                   Text(statusLine, style: const TextStyle(fontSize: 11)),
                 ],
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -1308,10 +1287,6 @@ class SophistryDial extends StatelessWidget {
           CustomPaint(
             size: size,
             painter: _DialPainter(),
-          ),
-          DialLabelOverlay(
-            size: size,
-            thresholds: const [0, 40, 70, 90],
           ),
           // Needle — painted with canvas pivot at bottom-center (hub)
           Positioned(

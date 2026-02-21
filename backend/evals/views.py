@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import TestSet, TestCase, Run, Result
 from .serializers import TestSetSerializer, TestCaseSerializer, RunSerializer, ResultSerializer
 from evals.tasks import score_run
+from .vocab_learner import extract_from_prompt, merge_answer_vocab
 
 def perform_create(self, serializer):
     run = serializer.save()
@@ -184,6 +185,12 @@ def mobile_question(request):
         return response.Response({"detail": "no more questions"}, status=404)
 
     tc = TestCase.objects.get(id=random.choice(ids))
+
+    # Seed learned_vocab from prompt if not yet populated
+    if not tc.learned_vocab:
+        tc.learned_vocab = extract_from_prompt(tc.prompt)
+        tc.save(update_fields=["learned_vocab"])
+
     return response.Response({
         "testcase_id": tc.id,
         "slug": tc.slug,
@@ -209,8 +216,12 @@ def mobile_answer(request):
     run = Run.objects.get(run_uuid=run_uuid)
     tc = TestCase.objects.get(id=testcase_id)
 
-    # Structural scoring (primary)
-    score_result = score_case(tc.prompt, answer)
+    # Learn vocabulary from this answer
+    tc.learned_vocab = merge_answer_vocab(tc.learned_vocab, answer)
+    tc.save(update_fields=["learned_vocab"])
+
+    # Structural scoring with learned vocab
+    score_result = score_case(tc.prompt, answer, learned_vocab=tc.learned_vocab, question_slug=tc.slug)
     raw = score_result.get("score", 0) or 0
     # score is already 0..1 from structural_scoring; normalize defensively
     normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
@@ -257,7 +268,7 @@ def mobile_preview_score(request):
     except TestCase.DoesNotExist:
         return response.Response({"detail": "unknown testcase_id"}, status=404)
 
-    score_result = score_case(tc.prompt, answer)
+    score_result = score_case(tc.prompt, answer, learned_vocab=tc.learned_vocab, question_slug=tc.slug)
     raw = score_result.get("score", 0) or 0
     normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
 
@@ -300,17 +311,22 @@ def mobile_validate(request):
 
     # --- optional scoring (needs a prompt) ---
     question_text = None
+    learned = None
+    slug = "q"
+    tc = None
     if testcase_id:
         try:
             tc = TestCase.objects.get(id=testcase_id)
             question_text = tc.prompt
+            learned = tc.learned_vocab
+            slug = tc.slug
         except TestCase.DoesNotExist:
             pass
     if not question_text and prompt:
         question_text = prompt
 
     if question_text and answer.strip():
-        score_result = score_case(question_text, answer)
+        score_result = score_case(question_text, answer, learned_vocab=learned, question_slug=slug)
         raw = score_result.get("score", 0) or 0
         normalized_score = round(raw if raw <= 1.0 else raw / 100.0, 2)
         payload["scored"] = True
@@ -343,6 +359,7 @@ def mobile_create_testcase(request):
     tc = TestCase.objects.create(
         slug=slug, title=title, prompt=prompt,
         is_active=False, test_set_id=test_set_id,
+        learned_vocab=extract_from_prompt(prompt),
     )
     return response.Response({"ok": True, "testcase_id": tc.id, "is_active": tc.is_active})
 

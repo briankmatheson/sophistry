@@ -24,6 +24,10 @@ class TestCase(models.Model):
         TestSet, on_delete=models.SET_NULL,
         null=True, blank=True, related_name="testcases",
     )
+    learned_vocab = models.JSONField(
+        blank=True, null=True,
+        help_text="Auto-learned keywords from prompt + answers. Merged into scoring vocab.",
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
