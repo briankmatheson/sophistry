@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: briankmatheson/sophistry-com:0.8.10
+          image: briankmatheson/sophistry-com:0.8.11
           imagePullPolicy: Always
           ports:
             - name: http
