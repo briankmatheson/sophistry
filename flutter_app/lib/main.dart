@@ -19,7 +19,7 @@ const _darkslategray = Color(0xFF2F4F4F);
 const _darkslategrayLight = Color(0xFFE0EDED);
 const _green = Color(0xFF4CAF50);
 const _amber = Color(0xFFFFA726);
-const _navajoWhite = Color(0xFFFFDEAD);
+const _navajoWhite = Color(0xFFFFFEED);
 const _pageBg = Color(0xFFFBFBF8);
 
 // ─── font sizes (abstract for consistency) ──────────────────
