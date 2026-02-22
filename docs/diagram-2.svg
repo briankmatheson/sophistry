@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .title { font: 700 22px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111111; }
+      .laneTitle { font: 800 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111111; letter-spacing: 0.08em; }
+      .lane { fill: #f7f7f7; stroke: #111111; stroke-width: 2; rx: 16; ry: 16; }
+      .step { fill: #ffffff; stroke: #111111; stroke-width: 2; rx: 14; ry: 14; }
+      .label { font: 650 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111111; }
+      .small { font: 500 13px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #333333; }
+      .muted { font: 500 12.5px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #555555; }
+      .arrow { stroke: #111111; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+      .dashed { stroke-dasharray: 6 6; }
+      .gate { fill: #111111; }
+      .gateText { font: 800 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #ffffff; letter-spacing: 0.08em; }
+      .warn { fill: #fff7e6; stroke: #111111; stroke-width: 2; rx: 14; ry: 14; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <polygon points="0,0 10,4 0,8" fill="#111111"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1200" height="760"/>
+  <text class="title" x="40" y="54">Sophistry — Mobile Flow (Question Sets + Preview Gate)</text>
+
+  <!-- Lanes -->
+  <rect class="lane" x="60" y="90" width="520" height="620"/>
+  <text class="laneTitle" x="90" y="125">FLUTTER CLIENT</text>
+
+  <rect class="lane" x="620" y="90" width="520" height="620"/>
+  <text class="laneTitle" x="650" y="125">DJANGO API + SCORER</text>
+
+  <!-- Steps: left -->
+  <rect class="step" x="110" y="160" width="420" height="70"/>
+  <text class="label" x="130" y="190">Select Question Set</text>
+  <text class="muted" x="130" y="212">Dropdown: Benchmark / Community / etc.</text>
+
+  <rect class="step" x="110" y="250" width="420" height="70"/>
+  <text class="label" x="130" y="280">Start / Resume Run</text>
+  <text class="muted" x="130" y="302">run_uuid stored locally</text>
+
+  <rect class="step" x="110" y="340" width="420" height="70"/>
+  <text class="label" x="130" y="370">Fetch Next Question</text>
+  <text class="muted" x="130" y="392">Filtered by selected set</text>
+
+  <rect class="step" x="110" y="430" width="420" height="90"/>
+  <text class="label" x="130" y="460">Write Answer</text>
+  <text class="muted" x="130" y="482">Live word/sentence counters</text>
+  <text class="muted" x="130" y="504">Submit disabled until preview + valid</text>
+
+  <rect class="step" x="110" y="540" width="420" height="70"/>
+  <text class="label" x="130" y="570">Check Score (Preview)</text>
+  <text class="muted" x="130" y="592">Dial animates to new reading</text>
+
+  <rect class="step" x="110" y="630" width="420" height="70"/>
+  <text class="label" x="130" y="660">Submit Answer</text>
+  <text class="muted" x="130" y="682">Only if unchanged since preview</text>
+
+  <!-- Steps: right -->
+  <rect class="step" x="670" y="160" width="420" height="70"/>
+  <text class="label" x="690" y="190">GET /mobile/question_sets</text>
+  <text class="muted" x="690" y="212">Counts + (optional) answered per run</text>
+
+  <rect class="step" x="670" y="250" width="420" height="70"/>
+  <text class="label" x="690" y="280">POST /mobile/run</text>
+  <text class="muted" x="690" y="302">Create run_uuid + persist filters</text>
+
+  <rect class="step" x="670" y="340" width="420" height="70"/>
+  <text class="label" x="690" y="370">GET /mobile/question</text>
+  <text class="muted" x="690" y="392">Next unanswered in set for run_uuid</text>
+
+  <rect class="step" x="670" y="540" width="420" height="90"/>
+  <text class="label" x="690" y="570">POST /mobile/preview</text>
+  <text class="muted" x="690" y="592">Structural score 0–100 + band + diagnostics</text>
+  <text class="muted" x="690" y="614">Includes rubric_version + penalties</text>
+
+  <rect class="step" x="670" y="630" width="420" height="70"/>
+  <text class="label" x="690" y="660">POST /mobile/answer</text>
+  <text class="muted" x="690" y="682">Persist Result + score_details</text>
+
+  <!-- Gate between preview and submit -->
+  <rect class="gate" x="560" y="585" width="80" height="22" rx="11" ry="11"/>
+  <text class="gateText" x="572" y="601">GATE</text>
+
+  <rect class="warn" x="560" y="615" width="80" height="70"/>
+  <text class="label" x="568" y="642">Valid?</text>
+  <text class="muted" x="568" y="662">42+ words</text>
+  <text class="muted" x="568" y="680">3+ sentences</text>
+
+  <!-- Arrows left->right -->
+  <path class="arrow" d="M 530 195 L 670 195"/>
+  <path class="arrow" d="M 530 285 L 670 285"/>
+  <path class="arrow" d="M 530 375 L 670 375"/>
+  <path class="arrow" d="M 530 575 L 670 585"/>
+  <path class="arrow" d="M 530 665 L 670 665"/>
+
+  <!-- Internal arrows on left -->
+  <path class="arrow" d="M 320 230 L 320 250"/>
+  <path class="arrow" d="M 320 320 L 320 340"/>
+  <path class="arrow" d="M 320 410 L 320 430"/>
+  <path class="arrow" d="M 320 520 L 320 540"/>
+  <path class="arrow" d="M 320 610 L 320 630"/>
+
+  <!-- Notes -->
+  <text class="small" x="90" y="725">Key idea: Preview produces a “reading”; submit requires passing validation and being unchanged since last preview.</text>
+</svg>
