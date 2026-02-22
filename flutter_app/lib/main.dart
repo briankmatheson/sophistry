@@ -538,7 +538,7 @@ class _SophistryHomeState extends State<SophistryHome> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // test set picker
-                if (testSets.length > 1) ...[
+                if (testSets.isNotEmpty) ...[
                   _testSetDropdown(),
                   const SizedBox(height: 10),
                 ],
@@ -1467,7 +1467,7 @@ class SophistryDial extends StatelessWidget {
     // 0 = far left (9 o'clock), 100 = far right (3 o'clock)
     final angleRad = ((clamped / 100.0) * math.pi) - (math.pi / 2);
     final radius = math.min(size.width / 2, size.height) - 6;
-    final needleLen = radius * 0.92;
+    final needleLen = radius * 0.72;
 
     return SizedBox(
       width: size.width,
@@ -1487,7 +1487,7 @@ class SophistryDial extends StatelessWidget {
               height: size.height,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: -math.pi / 2, end: angleRad),
-                duration: const Duration(milliseconds: 750),
+                duration: const Duration(milliseconds: 450),
                 curve: Curves.easeOutCubic,
                 builder: (_, a, __) => CustomPaint(
                   size: size,
@@ -1550,7 +1550,7 @@ class DialLabelOverlay extends StatelessWidget {
                 child: Text(
                   _bandInfo[i].label,
                   style: TextStyle(
-                    fontSize: 6,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [

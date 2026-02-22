@@ -12,7 +12,7 @@ VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev
 
 export VERSION REPO NS
 
-.PHONY: build push deploy migrate seed ship clean version apply roll check
+.PHONY: build push deploy migrate seed seed-reset ship clean version apply roll check
 
 version:
 	@echo $(VERSION)
@@ -47,7 +47,10 @@ migrate:
 	kubectl logs -n $(NS) job/sophistry-migrate
 
 seed:
-	bash deploy/k8s/seed.sh
+	kubectl exec -itn $(NS) deploy/sophistry-api -- python manage.py seed
+
+seed-reset:
+	kubectl exec -itn $(NS) deploy/sophistry-api -- python manage.py seed --reset
 
 # ─── ship (the full monty, no migrate) ───────────────────
 ship: build push deploy
@@ -108,7 +111,6 @@ clean:
 
 # ─── secrets (never checked in, generated from env) ───────
 secret:
-	kubectl exec -n sophistry sophistry-pg-1 -- psql -U postgres -c "ALTER USER sophistry WITH PASSWORD '$$POSTGRES_PASSWORD';"
 	@[ -n "$$POSTGRES_PASSWORD" ] || (echo "ERROR: POSTGRES_PASSWORD not set" && exit 1)
 	kubectl create secret generic sophistry-db-secret \
 		--namespace $(NS) \

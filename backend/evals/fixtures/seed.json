@@ -1,0 +1,155 @@
+{
+  "test_sets": [
+    {
+      "name": "Disproven Theories",
+      "description": "Historical scientific theories that were later disproven or superseded"
+    },
+    {
+      "name": "Paradoxes & Puzzles",
+      "description": "Classic thought experiments, paradoxes, and logic puzzles"
+    },
+    {
+      "name": "Computer Science",
+      "description": "Foundational problems and concepts in computer science"
+    },
+    {
+      "name": "Philosophy of Mind",
+      "description": "Questions about consciousness, identity, and understanding"
+    }
+  ],
+  "test_cases": [
+    {
+      "slug": "phlogiston",
+      "title": "Phlogiston",
+      "prompt": "What is phlogiston and why was the theory abandoned?",
+      "test_set": "Disproven Theories",
+      "tags": ["science", "disproven"]
+    },
+    {
+      "slug": "luminiferous-aether",
+      "title": "Luminiferous Aether",
+      "prompt": "What was the luminiferous aether and why was it abandoned?",
+      "test_set": "Disproven Theories",
+      "tags": ["science", "disproven"]
+    },
+    {
+      "slug": "spontaneous-generation",
+      "title": "Spontaneous Generation",
+      "prompt": "What was the theory of spontaneous generation and how was it disproven?",
+      "test_set": "Disproven Theories",
+      "tags": ["science", "disproven"]
+    },
+    {
+      "slug": "caloric-theory",
+      "title": "Caloric Theory",
+      "prompt": "What was the caloric theory of heat and what replaced it?",
+      "test_set": "Disproven Theories",
+      "tags": ["science", "disproven"]
+    },
+    {
+      "slug": "miasma-theory",
+      "title": "Miasma Theory",
+      "prompt": "What was miasma theory and how did germ theory replace it?",
+      "test_set": "Disproven Theories",
+      "tags": ["science", "disproven"]
+    },
+    {
+      "slug": "fermi-paradox",
+      "title": "Fermi Paradox",
+      "prompt": "What is the Fermi paradox and what are the leading proposed resolutions?",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["science", "space", "paradox"]
+    },
+    {
+      "slug": "monty-hall",
+      "title": "Monty Hall Problem",
+      "prompt": "Explain the Monty Hall problem. Should you switch doors and why?",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["math", "probability", "paradox"]
+    },
+    {
+      "slug": "ship-of-theseus",
+      "title": "Ship of Theseus",
+      "prompt": "What is the Ship of Theseus paradox and what does it reveal about identity?",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["philosophy", "identity", "paradox"]
+    },
+    {
+      "slug": "trolley-problem",
+      "title": "Trolley Problem",
+      "prompt": "Describe the trolley problem and its implications for ethical reasoning.",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["philosophy", "ethics", "paradox"]
+    },
+    {
+      "slug": "zenos-paradox",
+      "title": "Zeno's Paradox",
+      "prompt": "Explain Zeno's paradox of Achilles and the Tortoise. How is it resolved?",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["philosophy", "math", "paradox"]
+    },
+    {
+      "slug": "birthday-paradox",
+      "title": "Birthday Paradox",
+      "prompt": "What is the birthday paradox and why is the result counterintuitive?",
+      "test_set": "Paradoxes & Puzzles",
+      "tags": ["math", "probability", "paradox"]
+    },
+    {
+      "slug": "halting-problem",
+      "title": "Halting Problem",
+      "prompt": "What is the halting problem and why is it important in computer science?",
+      "test_set": "Computer Science",
+      "tags": ["cs", "computability"]
+    },
+    {
+      "slug": "p-vs-np",
+      "title": "P vs NP",
+      "prompt": "Explain the P vs NP problem. Why does it matter?",
+      "test_set": "Computer Science",
+      "tags": ["cs", "complexity", "open-problems"]
+    },
+    {
+      "slug": "byzantine-generals",
+      "title": "Byzantine Generals Problem",
+      "prompt": "What is the Byzantine Generals Problem and how does it relate to distributed systems?",
+      "test_set": "Computer Science",
+      "tags": ["cs", "distributed-systems"]
+    },
+    {
+      "slug": "goedels-incompleteness",
+      "title": "Gödel's Incompleteness Theorems",
+      "prompt": "What are Gödel's incompleteness theorems and what do they imply about formal systems?",
+      "test_set": "Computer Science",
+      "tags": ["cs", "math", "logic"]
+    },
+    {
+      "slug": "chinese-room",
+      "title": "Chinese Room",
+      "prompt": "What is Searle's Chinese Room argument and what does it claim about AI understanding?",
+      "test_set": "Philosophy of Mind",
+      "tags": ["philosophy", "ai", "consciousness"]
+    },
+    {
+      "slug": "hard-problem-consciousness",
+      "title": "Hard Problem of Consciousness",
+      "prompt": "What is the hard problem of consciousness and why is it considered hard?",
+      "test_set": "Philosophy of Mind",
+      "tags": ["philosophy", "consciousness"]
+    },
+    {
+      "slug": "philosophical-zombie",
+      "title": "Philosophical Zombie",
+      "prompt": "What is a philosophical zombie (p-zombie) and what does the thought experiment show?",
+      "test_set": "Philosophy of Mind",
+      "tags": ["philosophy", "consciousness"]
+    },
+    {
+      "slug": "turings-imitation-game",
+      "title": "Turing's Imitation Game",
+      "prompt": "What is the Turing test and what are its strengths and limitations as a measure of intelligence?",
+      "test_set": "Philosophy of Mind",
+      "tags": ["philosophy", "ai", "intelligence"]
+    }
+  ]
+}
