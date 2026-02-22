@@ -19,6 +19,30 @@ const _darkslategray = Color(0xFF2F4F4F);
 const _darkslategrayLight = Color(0xFFE0EDED);
 const _green = Color(0xFF4CAF50);
 const _amber = Color(0xFFFFA726);
+const _navajoWhite = Color(0xFFFFDEAD);
+const _pageBg = Color(0xFFFBFBF8);
+
+// ─── font sizes (abstract for consistency) ──────────────────
+class FS {
+  static const double xs = 10.0;
+  static const double sm = 12.0;
+  static const double md = 14.0;
+  static const double lg = 16.0;
+  static const double xl = 18.0;
+  static const double xxl = 22.0;
+  static const double title = 20.0;
+}
+
+// ─── button style helper ────────────────────────────────────
+final _solidButtonStyle = OutlinedButton.styleFrom(
+  backgroundColor: _navajoWhite,
+  foregroundColor: _darkslategray,
+  side: BorderSide(color: _darkslategray.withOpacity(0.25)),
+);
+final _filledButtonStyle = FilledButton.styleFrom(
+  backgroundColor: _navajoWhite,
+  foregroundColor: _darkslategray,
+);
 
 // ─── Dial tooltips (F / B / R / U) ───────────────────────
 class DialBandInfo {
@@ -63,15 +87,39 @@ class SophistryApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorSchemeSeed: _darkslategray,
-          textTheme: GoogleFonts.architectsDaughterTextTheme(),
+          textTheme: GoogleFonts.interTextTheme(),
+          outlinedButtonTheme: OutlinedButtonThemeData(style: _solidButtonStyle),
+          filledButtonTheme: FilledButtonThemeData(style: _filledButtonStyle),
+          dropdownMenuTheme: DropdownMenuThemeData(
+            menuStyle: MenuStyle(
+              backgroundColor: WidgetStatePropertyAll(_navajoWhite),
+            ),
+          ),
         ),
-        home: const SophistryHome(),
+        initialRoute: '/',
+        onGenerateRoute: (settings) {
+          final uri = Uri.parse(settings.name ?? '/');
+          // Match /results/{uuid}
+          if (uri.pathSegments.length == 2 &&
+              uri.pathSegments[0] == 'results') {
+            final uuid = uri.pathSegments[1];
+            return MaterialPageRoute(
+              builder: (_) => SophistryHome(initialRunUuid: uuid),
+              settings: settings,
+            );
+          }
+          return MaterialPageRoute(
+            builder: (_) => const SophistryHome(),
+            settings: settings,
+          );
+        },
       );
 }
 
 // ─── home: decides question flow vs review ─────────────────
 class SophistryHome extends StatefulWidget {
-  const SophistryHome({super.key});
+  final String? initialRunUuid;
+  const SophistryHome({super.key, this.initialRunUuid});
 
   @override
   State<SophistryHome> createState() => _SophistryHomeState();
@@ -211,6 +259,12 @@ class _SophistryHomeState extends State<SophistryHome> {
       });
     });
 
+    // If launched with a specific run UUID (e.g. /results/{uuid}), go straight to review
+    if (widget.initialRunUuid != null) {
+      await _loadReviewForUuid(widget.initialRunUuid!);
+      return;
+    }
+
     sessionId = getSessionId();
     final savedRun = getSavedRunUuid();
 
@@ -263,6 +317,30 @@ class _SophistryHomeState extends State<SophistryHome> {
 
     // New session — start question flow
     await _startNewRun();
+  }
+
+  /// Load review directly for a given UUID (used by /results/{uuid} route)
+  Future<void> _loadReviewForUuid(String uuid) async {
+    setState(() {
+      loading = true;
+      runUuid = uuid;
+    });
+    try {
+      final data = await api.getReview(uuid);
+      setState(() {
+        reviewData = data;
+        inReview = true;
+        canAddTestcase = true;
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        inReview = true;
+        canAddTestcase = true;
+        loading = false;
+        statusLine = 'Could not load results: $e';
+      });
+    }
   }
 
   Future<void> _startNewRun() async {
@@ -429,12 +507,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         await api.resetSession();
       } catch (_) {}
       clearWebCaches();
-      // On web: reload page. On native: restart the flow in-place.
-      if (kIsWeb) {
-        reloadPage();
-      } else {
-        await _startNewRun();
-      }
+      await _startNewRun();
     }
   }
 
@@ -493,14 +566,18 @@ class _SophistryHomeState extends State<SophistryHome> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBF8),
       appBar: AppBar(
-        title: const Text('Sophistry'),
+        title: Text('Sophistry', style: TextStyle(fontSize: FS.xxl, fontWeight: FontWeight.bold)),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 4),
             child: Center(
-              child: Text(
-                'fe ${AppConfig.appVersion} · be $backendVersion',
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('fe ${AppConfig.appVersion}', style: TextStyle(fontSize: FS.xs, color: Colors.grey[500])),
+                  Text('be $backendVersion', style: TextStyle(fontSize: FS.xs, color: Colors.grey[500])),
+                ],
               ),
             ),
           ),
@@ -518,6 +595,9 @@ class _SophistryHomeState extends State<SophistryHome> {
       ),
       body: Stack(
         children: [
+          Positioned.fill(
+            child: CustomPaint(painter: _GraphPaperPainter()),
+          ),
           loading
               ? const Center(child: CircularProgressIndicator())
               : inReview
@@ -555,7 +635,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                 if (currentQuestion != null) ...[
                   Card(
                     elevation: 2,
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -563,17 +643,17 @@ class _SophistryHomeState extends State<SophistryHome> {
                         children: [
                           Text(
                             'Question ${questionsAnswered + 1} of ${AppConfig.questionsPerSession}',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(fontSize: FS.sm, color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             currentQuestion!['title'] ?? currentQuestion!['slug'] ?? '',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: FS.md, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             currentQuestion!['prompt'] ?? '',
-                            style: const TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: FS.lg),
                           ),
                         ],
                       ),
@@ -603,9 +683,12 @@ class _SophistryHomeState extends State<SophistryHome> {
                         labelText: 'Your answer',
                         border: OutlineInputBorder(),
                         alignLabelWithHint: true,
+                        filled: true,
+                        fillColor: Colors.white,
                       ),
                     ),
                   ),
+                  _progressBar(),
                   const SizedBox(height: 10),
                   // dial + feedback area
                   if (checkResult != null) _buildCheckResult(),
@@ -620,7 +703,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                           const SizedBox(width: 4),
                           Text(
                             'Answer changed — re-check score',
-                            style: TextStyle(fontSize: 11, color: Colors.orange[700], fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: FS.sm, color: Colors.orange[700], fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -660,7 +743,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                 ),
                 if (statusLine.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  Text(statusLine, style: const TextStyle(fontSize: 11)),
+                  Text(statusLine, style: TextStyle(fontSize: FS.sm)),
                 ],
                 const SizedBox(height: 16),
               ],
@@ -675,17 +758,18 @@ class _SophistryHomeState extends State<SophistryHome> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: _navajoWhite,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _darkslategray.withOpacity(0.2)),
+        border: Border.all(color: _darkslategray.withOpacity(0.25)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: selectedTestSetId,
           isExpanded: true,
           isDense: true,
-          icon: Icon(Icons.unfold_more, size: 18, color: Colors.grey[600]),
-          style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+          dropdownColor: _navajoWhite,
+          icon: Icon(Icons.unfold_more, size: 18, color: _darkslategray),
+          style: TextStyle(fontSize: FS.md, color: _darkslategray, fontWeight: FontWeight.w600),
           items: testSets.map((ts) {
             return DropdownMenuItem<int>(
               value: (ts['id'] as num).toInt(),
@@ -732,7 +816,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         Text(
           '$_wordCount / $minWords words${met ? " ✓" : ""}',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: FS.sm,
             color: met ? _green : Colors.grey[600],
           ),
         ),
@@ -776,7 +860,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.75),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: _darkslategray.withOpacity(0.2)),
         ),
@@ -794,7 +878,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                   Text(
                     band,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: FS.sm,
                       fontWeight: FontWeight.w700,
                       color: _darkslategray.withOpacity(0.8),
                     ),
@@ -805,7 +889,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         n,
-                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: FS.xs, color: Colors.grey[600]),
                       ),
                     )),
                   ],
@@ -850,8 +934,8 @@ class _SophistryHomeState extends State<SophistryHome> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: allOk
-                ? _green.withOpacity(0.06)
-                : Colors.orange.withOpacity(0.06),
+                ? const Color(0xFFF0FFF0)  // solid light green
+                : const Color(0xFFFFF8F0), // solid light orange
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: allOk
@@ -874,7 +958,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                 Text(
                   allOk ? 'Validation passed' : 'Needs more work',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: FS.sm,
                     fontWeight: FontWeight.w700,
                     color: allOk ? _green : Colors.orange[800],
                   ),
@@ -886,7 +970,7 @@ class _SophistryHomeState extends State<SophistryHome> {
               'Words: $wc / $minW ${wordsOk ? "✓" : "✗"}    '
               'Sentences: $sc / $minS ${sentencesOk ? "✓" : "✗"}',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: FS.sm,
                 color: Colors.grey[700],
               ),
             ),
@@ -907,7 +991,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                         Text(
                           'Structural alignment',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: FS.sm,
                             fontWeight: FontWeight.w700,
                             color: _darkslategray.withOpacity(0.8),
                           ),
@@ -915,7 +999,7 @@ class _SophistryHomeState extends State<SophistryHome> {
                         const SizedBox(height: 2),
                         Text(
                           'Score: ${dialScore.round()} / 100',
-                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: FS.xs, color: Colors.grey[600]),
                         ),
                         if (checkResult?['score_details'] != null) ...[
                           const SizedBox(height: 2),
@@ -930,7 +1014,7 @@ class _SophistryHomeState extends State<SophistryHome> {
               const SizedBox(height: 4),
               Text(
                 'Add a question to also see the alignment score.',
-                style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey[500]),
+                style: TextStyle(fontSize: FS.xs, fontStyle: FontStyle.italic, color: Colors.grey[500]),
               ),
             ],
           ],
@@ -955,6 +1039,9 @@ class _SophistryHomeState extends State<SophistryHome> {
   // ─── REVIEW SCREEN ─────────────────────────────────────
   Widget _buildReview() {
     final results = reviewData?['results'] as List<dynamic>? ?? [];
+    final shortUuid = (runUuid ?? '').length > 8
+        ? '${runUuid!.substring(0, 8)}…'
+        : (runUuid ?? '');
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -963,11 +1050,34 @@ class _SophistryHomeState extends State<SophistryHome> {
         children: [
           // header
           const Text('Your Results',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: FS.title, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text(
-            'Session: ${runUuid ?? ""}',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          Row(
+            children: [
+              Text(
+                'Session: $shortUuid',
+                style: TextStyle(fontSize: FS.sm, color: Colors.grey[500]),
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: () {
+                  if (runUuid != null) {
+                    Clipboard.setData(ClipboardData(text: runUuid!));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('UUID copied'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -976,7 +1086,7 @@ class _SophistryHomeState extends State<SophistryHome> {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Text(statusLine,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: FS.md),
                     textAlign: TextAlign.center),
               ),
             )
@@ -990,12 +1100,8 @@ class _SophistryHomeState extends State<SophistryHome> {
 
           if (statusLine.isNotEmpty && results.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(statusLine, style: const TextStyle(fontSize: 12)),
+            Text(statusLine, style: const TextStyle(fontSize: FS.sm)),
           ],
-
-          // bottom legend
-          const Divider(),
-          _legendRow(),
         ],
       ),
     );
@@ -1014,6 +1120,7 @@ class _SophistryHomeState extends State<SophistryHome> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -1022,12 +1129,12 @@ class _SophistryHomeState extends State<SophistryHome> {
             // question title
             Text(
               r['testcase_title'] ?? r['testcase_slug'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: FS.md),
             ),
             const SizedBox(height: 4),
             Text(
               r['prompt'] ?? '',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: FS.sm, color: Colors.grey[600]),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1038,12 +1145,12 @@ class _SophistryHomeState extends State<SophistryHome> {
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 title: const Text('Your answer',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                    style: TextStyle(fontSize: FS.sm, fontWeight: FontWeight.w500)),
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(r['user_answer'],
-                        style: const TextStyle(fontSize: 13)),
+                        style: const TextStyle(fontSize: FS.md)),
                   ),
                 ],
               ),
@@ -1086,53 +1193,30 @@ class _SophistryHomeState extends State<SophistryHome> {
         children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+                  fontSize: FS.xs, fontWeight: FontWeight.w600, color: color)),
           const SizedBox(height: 4),
           if (dialScore != null)
             SophistryDial(score: dialScore!, size: const Size(120, 66))
           else
-            Text(icon, style: const TextStyle(fontSize: 20)),
+            Text(icon, style: const TextStyle(fontSize: FS.title)),
           const SizedBox(height: 6),
           Text(
             level,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(fontSize: FS.sm, fontWeight: FontWeight.w600, color: color),
           ),
           if (scoreVal != null) ...[
             const SizedBox(height: 2),
             Text(
               dialScore!.round().toString(),
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+              style: TextStyle(fontSize: FS.xs, color: Colors.grey[600]),
             ),
           ] else
-            Text('—', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+            Text('—', style: TextStyle(fontSize: FS.xs, color: Colors.grey[400])),
         ],
       ),
     );
   }
 
-  Widget _legendRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _legendItem('☀️ Noesis', 'Understanding'),
-          _legendItem('📐 Dianoia', 'Reasoning'),
-          _legendItem('🤝 Pistis', 'Belief'),
-          _legendItem('🪞 Eikasia', 'Imagination'),
-        ],
-      ),
-    );
-  }
-
-  Widget _legendItem(String icon, String label) {
-    return Column(
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 12)),
-        Text(label, style: TextStyle(fontSize: 9, color: Colors.grey[600])),
-      ],
-    );
-  }
 }
 
 // ─── Add Question Sheet (mobile-friendly) ──────────────────
@@ -1224,7 +1308,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
           const SizedBox(width: 8),
           Text(
             '$count / $_minWords${met ? " ✓" : ""}',
-            style: TextStyle(fontSize: 10, color: met ? _green : Colors.grey[500]),
+            style: TextStyle(fontSize: FS.xs, color: met ? _green : Colors.grey[500]),
           ),
         ],
       ),
@@ -1302,13 +1386,13 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                 // Header
                 const Text(
                   'Submit a Question',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: FS.title, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Propose a question and a sample answer. '
                   'Use Check to test relevance before submitting.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: FS.md, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 20),
                 // Title field
@@ -1392,7 +1476,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                             const SizedBox(height: 4),
                             Text(
                               'Score: ${dialScore.round()} / 100',
-                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                              style: TextStyle(fontSize: FS.sm, color: Colors.grey[700]),
                             ),
                           ],
                           // Explain lines
@@ -1404,7 +1488,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                               final explain = inner['explain'] as List<dynamic>? ?? [];
                               return explain.take(3).map((e) => Text(
                                     e.toString(),
-                                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                                    style: TextStyle(fontSize: FS.xs, color: Colors.grey[500]),
                                     textAlign: TextAlign.center,
                                   ));
                             })(),
@@ -1423,7 +1507,7 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                           const SizedBox(width: 4),
                           Text(
                             'Changed — re-check',
-                            style: TextStyle(fontSize: 11, color: Colors.orange[700]),
+                            style: TextStyle(fontSize: FS.sm, color: Colors.orange[700]),
                           ),
                         ],
                       ),
@@ -1559,7 +1643,7 @@ class DialLabelOverlay extends StatelessWidget {
                 child: Text(
                   _bandInfo[i].label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: FS.sm,
                     fontWeight: FontWeight.w800,
                     color: Colors.white.withOpacity(0.88),
                     shadows: const [
