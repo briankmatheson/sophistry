@@ -24,12 +24,12 @@ const _pageBg = Color(0xFFFBFBF8);
 
 // ─── font sizes (abstract for consistency) ──────────────────
 class FS {
-  static const double xs = 10.0;
-  static const double sm = 12.0;
-  static const double md = 14.0;
-  static const double lg = 16.0;
-  static const double xl = 18.0;
-  static const double xxl = 22.0;
+  static const double xs = 12.0;
+  static const double sm = 14.0;
+  static const double md = 16.0;
+  static const double lg = 18.0;
+  static const double xl = 20.0;
+  static const double xxl = 24.0;
   static const double title = 20.0;
 }
 
@@ -808,8 +808,8 @@ class _SophistryHomeState extends State<SophistryHome> {
           child: LinearProgressIndicator(
             value: barValue,
             minHeight: 8,
-            backgroundColor: _darkslategray,
-            valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _darkslategray),
+            backgroundColor: _navajoWhite,
+            valueColor: AlwaysStoppedAnimation<Color>(met ? _green : _navajoWhite),
           ),
         ),
         const SizedBox(height: 4),
