@@ -1,90 +1,54 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:js' as js;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 
-const String kCookieName = 'sophistry_session';
-const String kRunUuidCookie = 'sophistry_run_uuid';
-const String kProgressCookie = 'sophistry_progress';
-const String kTestSetCookie = 'sophistry_test_set';
+const String _kSessionId = 'sophistry_session';
+const String _kRunUuid = 'sophistry_run_uuid';
+const String _kProgress = 'sophistry_progress';
+const String _kTestSetId = 'sophistry_test_set';
 
-/// Read the session UUID from cookie
-String? getSessionId() {
-  return _readCookie(kCookieName);
+/// Cached prefs instance — call initSession() once at startup
+SharedPreferences? _prefs;
+
+/// Must be called once before any other session function (e.g. in main)
+Future<void> initSession() async {
+  _prefs = await SharedPreferences.getInstance();
 }
 
-/// Read the run UUID from cookie (to restore review on return visit)
-String? getSavedRunUuid() {
-  return _readCookie(kRunUuidCookie);
+SharedPreferences get _p {
+  assert(_prefs != null, 'Call initSession() before using session functions');
+  return _prefs!;
 }
 
-/// Save run UUID to cookie so we can restore on return
-void saveRunUuid(String runUuid) {
-  html.document.cookie =
-      '$kRunUuidCookie=$runUuid; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax';
-}
+// ─── Session ────────────────────────────────────────────
+String? getSessionId() => _p.getString(_kSessionId);
 
-/// Clear run UUID cookie
+// ─── Run UUID ───────────────────────────────────────────
+String? getSavedRunUuid() => _p.getString(_kRunUuid);
+
+void saveRunUuid(String runUuid) => _p.setString(_kRunUuid, runUuid);
+
 void clearRunUuid() {
-  html.document.cookie = '$kRunUuidCookie=; path=/; max-age=0';
-  html.document.cookie = '$kProgressCookie=; path=/; max-age=0';
+  _p.remove(_kRunUuid);
+  _p.remove(_kProgress);
 }
 
-/// Save questions-answered count
-void saveProgress(int count) {
-  html.document.cookie =
-      '$kProgressCookie=$count; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax';
-}
+// ─── Progress ───────────────────────────────────────────
+void saveProgress(int count) => _p.setInt(_kProgress, count);
 
-/// Read questions-answered count
-int getSavedProgress() {
-  final val = _readCookie(kProgressCookie);
-  if (val == null) return 0;
-  return int.tryParse(val) ?? 0;
-}
+int getSavedProgress() => _p.getInt(_kProgress) ?? 0;
 
-/// Reload the page (web only)
+// ─── Test Set ───────────────────────────────────────────
+void saveTestSetId(int id) => _p.setInt(_kTestSetId, id);
+
+int? getSavedTestSetId() => _p.getInt(_kTestSetId);
+
+// ─── Reload (web only, no-op on native) ─────────────────
 void reloadPage() {
-  html.window.location.reload();
+  // On native, the caller should handle navigation differently
+  // Web: handled by session_web.dart conditional import if needed
 }
 
-/// Clear service worker registrations and CacheStorage (cached .js bundles)
+// ─── Clear web caches (no-op on native) ─────────────────
 void clearWebCaches() {
-  try {
-    // Unregister all service workers
-    html.window.navigator.serviceWorker?.getRegistrations().then((regs) {
-      for (final reg in regs) {
-        reg.unregister();
-      }
-    });
-  } catch (_) {}
-  try {
-    // Delete all CacheStorage entries via JS eval
-    js.context.callMethod('eval', [
-      "if('caches' in window){caches.keys().then(function(n){n.forEach(function(k){caches.delete(k)})})}"
-    ]);
-  } catch (_) {}
-}
-
-/// Save selected test set id
-void saveTestSetId(int id) {
-  html.document.cookie =
-      '$kTestSetCookie=$id; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax';
-}
-
-/// Read selected test set id
-int? getSavedTestSetId() {
-  final val = _readCookie(kTestSetCookie);
-  if (val == null) return null;
-  return int.tryParse(val);
-}
-
-String? _readCookie(String name) {
-  final cookies = html.document.cookie ?? '';
-  for (final cookie in cookies.split(';')) {
-    final parts = cookie.trim().split('=');
-    if (parts.length == 2 && parts[0] == name) {
-      return parts[1];
-    }
-  }
-  return null;
+  // Web: handled by session_web.dart conditional import if needed
 }

@@ -1,37 +1,20 @@
-// Add this to your main app bar or scaffold.
-// Uses universal_html for cookie access on web, http for the reset call.
-//
-// pubspec.yaml dependencies needed:
-//   universal_html: ^2.2.4
-//   http: ^1.2.0
+// Legacy session reset widget — superseded by session.dart + main.dart _resetSession.
+// Kept for reference. Uses cross-platform session.dart now.
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:html' as html;  // web only — use universal_html for multi-platform
+import 'session.dart';
+import 'config.dart';
 
-const String kApiBase = 'https://app.sophistry.online';
-const String kCookieName = 'sophistry_session';
-
-/// Read the session UUID from the cookie (web only)
-String? getSessionId() {
-  final cookies = html.document.cookie ?? '';
-  for (final cookie in cookies.split(';')) {
-    final parts = cookie.trim().split('=');
-    if (parts.length == 2 && parts[0] == kCookieName) {
-      return parts[1];
-    }
-  }
-  return null;
-}
-
-/// Call the reset endpoint — Django sets a new cookie in the response
+/// Call the reset endpoint
 Future<void> resetSession() async {
   await http.post(
-    Uri.parse('$kApiBase/api/session/reset/'),
+    Uri.parse('${AppConfig.backendBaseUrl}/api/session/reset/'),
     headers: {'Content-Type': 'application/json'},
   );
-  // Reload the page so the new cookie takes effect
-  html.window.location.reload();
+  clearRunUuid();
+  clearWebCaches();
+  reloadPage();
 }
 
 /// A simple icon button for the top-right of your AppBar

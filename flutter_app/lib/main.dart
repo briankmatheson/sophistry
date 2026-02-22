@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
@@ -7,7 +8,11 @@ import 'api.dart';
 import 'config.dart';
 import 'session.dart';
 
-void main() => runApp(const SophistryApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initSession();
+  runApp(const SophistryApp());
+}
 
 // ─── palette ───────────────────────────────────────────────
 const _darkslategray = Color(0xFF2F4F4F);
@@ -423,9 +428,13 @@ class _SophistryHomeState extends State<SophistryHome> {
       try {
         await api.resetSession();
       } catch (_) {}
-      // Clear cached .js / service worker so fresh assets load
       clearWebCaches();
-      reloadPage();
+      // On web: reload page. On native: restart the flow in-place.
+      if (kIsWeb) {
+        reloadPage();
+      } else {
+        await _startNewRun();
+      }
     }
   }
 
