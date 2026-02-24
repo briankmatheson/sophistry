@@ -1412,4 +1412,135 @@
     ],
     "is_active": true
   }
+][
+  {
+    "slug": "pop-culture-nostalgia-reboots",
+    "title": "Nostalgia and Reboots",
+    "prompt": "Why do movie studios keep rebooting old franchises instead of investing in original stories, and what does that pattern reveal about how audiences relate to familiarity?",
+    "tags": ["pop-culture", "media", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "WHY",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["nostalgia", "risk", "franchise", "familiar", "audience", "original"],
+      "answer": "Studios reboot franchises because familiar intellectual property reduces financial risk. Audiences already have emotional attachment to known characters and worlds, which lowers the marketing burden. However, this cycle creates a feedback loop where original stories struggle to get funded because they lack built-in audiences. The pattern reveals that nostalgia functions as a kind of cultural insurance policy — comforting but potentially stifling to creative innovation."
+    }
+  },
+  {
+    "slug": "pop-culture-meme-communication",
+    "title": "Memes as Communication",
+    "prompt": "Internet memes spread rapidly and evolve as they travel between communities. In what ways do memes function as a form of language, and why do some memes endure while others vanish quickly?",
+    "tags": ["pop-culture", "language", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "EXPLANATION",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["meme", "spread", "meaning", "context", "evolve", "community"],
+      "answer": "Memes function like language because they carry shared meaning through culturally recognized symbols, and their interpretation depends on context. A meme endures when its template is flexible enough to be adapted to new situations while retaining a recognizable core structure. Memes that vanish tend to be too specific to one moment or too rigid to evolve. This parallels how slang works — expressions that adapt survive, while those tied to a single context fade."
+    }
+  },
+  {
+    "slug": "pop-culture-parasocial-relationships",
+    "title": "Parasocial Relationships",
+    "prompt": "Many people feel strong emotional connections to celebrities, streamers, or fictional characters they have never met. What are parasocial relationships, and why can they feel so real even though the connection is one-directional?",
+    "tags": ["pop-culture", "psychology", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "EXPLANATION",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["parasocial", "connection", "one-sided", "emotional", "intimacy", "media"],
+      "answer": "Parasocial relationships are one-sided emotional bonds where a viewer feels they know a public figure personally despite having no reciprocal interaction. They feel real because the brain processes consistent exposure to a personality similarly to how it builds familiarity with real acquaintances. Regular content consumption creates patterns of trust and recognition. These relationships are not inherently unhealthy, but they can become problematic when someone mistakes the illusion of intimacy for a genuine two-way connection."
+    }
+  },
+  {
+    "slug": "pop-culture-cancel-culture-mechanism",
+    "title": "Cancel Culture Mechanics",
+    "prompt": "The phenomenon sometimes called cancel culture involves public figures facing rapid collective backlash online. How does this process typically unfold, and why is it difficult to determine whether it functions as accountability or mob behavior?",
+    "tags": ["pop-culture", "ethics", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "EXPLANATION",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["accountability", "backlash", "public", "mob", "context", "proportional"],
+      "answer": "The process typically begins when a public figure's statement or action is surfaced and amplified through social media, triggering rapid collective response. It is difficult to categorize cleanly because the same mechanism can serve genuine accountability and disproportionate punishment. Whether it functions as justice or mob behavior often depends on context, proportionality, and whether the person had an opportunity to respond. Because social media compresses judgment into hours rather than days, nuance is frequently lost."
+    }
+  },
+  {
+    "slug": "pop-culture-superhero-fatigue",
+    "title": "Superhero Fatigue",
+    "prompt": "After more than a decade of dominance at the box office, superhero films have seen declining audiences. What factors might explain why audiences grow tired of a genre that was recently enormously popular?",
+    "tags": ["pop-culture", "media", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "EXPLANATION",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["fatigue", "genre", "audience", "formula", "oversaturation", "novelty"],
+      "answer": "Genre fatigue occurs when a formula becomes so predictable that it stops generating surprise or emotional stakes. Superhero films followed an escalating pattern — bigger threats, more crossovers, higher spectacle — which eventually made individual entries feel interchangeable. Oversaturation reduced scarcity, so each new release felt less like an event. Additionally, audiences who grew up with the genre aged into wanting different kinds of stories, while the formula didn't evolve fast enough to retain them."
+    }
+  },
+  {
+    "slug": "pop-culture-algorithm-taste",
+    "title": "Algorithms and Taste",
+    "prompt": "Streaming platforms use recommendation algorithms to suggest what you should watch or listen to next. How might these algorithms shape cultural taste over time, and why might that be a problem for creative diversity?",
+    "tags": ["pop-culture", "technology", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "WHY",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["algorithm", "recommendation", "taste", "diversity", "filter", "homogenize"],
+      "answer": "Recommendation algorithms optimize for engagement, which means they tend to surface content similar to what a user has already consumed. Over time, this creates filter bubbles where people are exposed to an increasingly narrow slice of available culture. The problem for creative diversity is that niche or experimental work gets less algorithmic promotion, making it harder for unusual ideas to find audiences. Culture risks becoming homogenized not by censorship but by optimization."
+    }
+  },
+  {
+    "slug": "pop-culture-true-crime-ethics",
+    "title": "True Crime Ethics",
+    "prompt": "True crime podcasts and documentaries have become enormously popular entertainment. What ethical tensions arise when real human suffering is packaged as entertainment, and why are those tensions difficult to resolve?",
+    "tags": ["pop-culture", "ethics", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "ARGUMENT",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["ethics", "suffering", "entertainment", "victims", "exploitation", "awareness"],
+      "answer": "The central tension is that true crime content can simultaneously raise awareness about injustice and exploit the suffering of real victims and their families. Creators often frame their work as advocacy, but the commercial incentive to dramatize pain complicates that claim. The difficulty is that there is no clean boundary between responsible storytelling and sensationalism — the same narrative techniques that make stories compelling also risk reducing real people to characters in someone else's entertainment."
+    }
+  },
+  {
+    "slug": "pop-culture-fandom-identity",
+    "title": "Fandom as Identity",
+    "prompt": "Some people build significant parts of their personal identity around being fans of particular franchises, artists, or genres. Why does fandom become identity for some people, and what happens when the thing they love changes or disappoints them?",
+    "tags": ["pop-culture", "psychology", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "EXPLANATION",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["identity", "fandom", "community", "belonging", "disappointment", "attachment"],
+      "answer": "Fandom becomes identity because shared enthusiasm creates community and belonging. When someone invests time, emotion, and social connection into a cultural object, it becomes part of how they understand themselves. The problem arises when the object changes — a beloved series takes a different direction, or an artist behaves badly — because it forces a renegotiation of identity. This explains why fan reactions to change can feel disproportionate: it is not just the product that feels threatened, but the person's sense of self."
+    }
+  },
+  {
+    "slug": "pop-culture-reality-tv-authenticity",
+    "title": "Reality TV and Authenticity",
+    "prompt": "Reality television presents itself as unscripted and authentic, but most viewers understand it is heavily produced and edited. Why do audiences continue watching something they know is not fully real, and what does that say about how we relate to authenticity?",
+    "tags": ["pop-culture", "media", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "WHY",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["authenticity", "reality", "produced", "audience", "performance", "entertainment"],
+      "answer": "Audiences watch reality TV not because they believe it is fully authentic, but because it occupies an appealing space between fiction and documentary. The emotional reactions of participants feel more spontaneous than scripted drama even when situations are manufactured. This suggests that authenticity is not binary — people are comfortable with degrees of realness as long as emotional signals feel genuine. It reveals that audiences value the appearance of authenticity as much as the thing itself."
+    }
+  },
+  {
+    "slug": "pop-culture-ai-generated-art-debate",
+    "title": "AI Art Debate",
+    "prompt": "The rise of AI image generators has created heated debate about whether AI-generated images should be considered art. What are the strongest arguments on each side, and why is the question harder to settle than it might first appear?",
+    "tags": ["pop-culture", "technology", "philosophy", "reasoning"],
+    "is_active": true,
+    "expected": {
+      "prompt_type": "ARGUMENT",
+      "validation": { "min_words": 42, "min_sentences": 3 },
+      "key_terms": ["art", "intent", "creativity", "tool", "human", "originality", "labor"],
+      "answer": "Those who argue AI-generated images are art point out that the human still provides creative intent through prompting, curation, and selection — similar to how photographers frame but don't paint. Those who disagree argue that art requires human labor, skill development, and emotional expression that cannot be delegated to a statistical model. The question is hard to settle because it depends on where you locate the essence of art: in the intent, the process, the output, or the experience of the viewer. Each framing produces a different answer."
+    }
+  }
 ]
