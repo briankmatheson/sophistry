@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Conditional web import for cache clearing
+import 'session_web_stub.dart' if (dart.library.html) 'session_web.dart' as web;
+
 const String _kSessionId = 'sophistry_session';
 const String _kRunUuid = 'sophistry_run_uuid';
 const String _kProgress = 'sophistry_progress';
@@ -44,11 +47,10 @@ int? getSavedTestSetId() => _p.getInt(_kTestSetId);
 
 // ─── Reload (web only, no-op on native) ─────────────────
 void reloadPage() {
-  // On native, the caller should handle navigation differently
-  // Web: handled by session_web.dart conditional import if needed
+  web.hardReload();
 }
 
 // ─── Clear web caches (no-op on native) ─────────────────
 void clearWebCaches() {
-  // Web: handled by session_web.dart conditional import if needed
+  web.clearBrowserCaches();
 }

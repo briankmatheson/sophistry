@@ -20,4 +20,5 @@ urlpatterns = [
     path("api/mobile/validate/", views.mobile_validate),
     path("api/mobile/testcase/", views.mobile_create_testcase),
     path("api/mobile/review/", review),
+    path("api/mobile/stats", views.mobile_stats),
 ]

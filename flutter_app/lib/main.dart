@@ -170,6 +170,10 @@ class _SophistryHomeState extends State<SophistryHome> {
   int serverMinWords = 23;
   int serverMinSentences = 2;
 
+  // global stats
+  int totalQuestions = 0;
+  int totalResponses = 0;
+
   // test sets
   List<Map<String, dynamic>> testSets = [];
   int? selectedTestSetId;
@@ -233,6 +237,17 @@ class _SophistryHomeState extends State<SophistryHome> {
     }
   }
 
+  void _refreshStats() {
+    api.getStats(runUuid: runUuid).then((stats) {
+      if (mounted) {
+        setState(() {
+          totalQuestions = (stats['total_questions'] as num?)?.toInt() ?? 0;
+          totalResponses = (stats['total_responses'] as num?)?.toInt() ?? 0;
+        });
+      }
+    }).catchError((_) {});
+  }
+
   Future<void> _init() async {
     // Fetch server constants (non-blocking)
     api.getInfo().then((info) {
@@ -259,6 +274,9 @@ class _SophistryHomeState extends State<SophistryHome> {
         if (mounted) setState(() => backendVersion = v);
       });
     });
+
+    // Fetch global stats (non-blocking)
+    _refreshStats();
 
     // If launched with a specific run UUID (e.g. /results/{uuid}), go straight to review
     if (widget.initialRunUuid != null) {
@@ -433,6 +451,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       checkResult = null;
       _checkedAnswerHash = null;
       saveProgress(questionsAnswered);
+      _refreshStats();
 
       if (questionsAnswered >= AppConfig.questionsPerSession) {
         // Done — go to review
@@ -508,6 +527,10 @@ class _SophistryHomeState extends State<SophistryHome> {
         await api.resetSession();
       } catch (_) {}
       clearWebCaches();
+      if (kIsWeb) {
+        reloadPage(); // hard reload clears JS cache
+        return;
+      }
       await _startNewRun();
     }
   }
@@ -567,7 +590,17 @@ class _SophistryHomeState extends State<SophistryHome> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBF8),
       appBar: AppBar(
-        title: Text('Sophistry', style: TextStyle(fontSize: FS.xxl, fontWeight: FontWeight.bold)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sophistry', style: TextStyle(fontSize: FS.xxl, fontWeight: FontWeight.bold)),
+            if (totalQuestions > 0)
+              Text(
+                '$totalQuestions questions · $totalResponses responses',
+                style: TextStyle(fontSize: FS.xs, color: Colors.grey[500]),
+              ),
+          ],
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),

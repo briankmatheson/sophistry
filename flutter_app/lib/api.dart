@@ -155,4 +155,15 @@ class SophistryApi {
       headers: {'Content-Type': 'application/json'},
     );
   }
+
+  /// Get global and per-run question/response counts
+  Future<Map<String, dynamic>> getStats({String? runUuid}) async {
+    final q = <String, dynamic>{};
+    if (runUuid != null) q['run_uuid'] = runUuid;
+    final res = await http.get(_u('/api/mobile/stats', q.isNotEmpty ? q : null));
+    if (res.statusCode != 200) {
+      throw Exception('getStats failed: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
 }

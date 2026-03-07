@@ -374,3 +374,26 @@ def mobile_create_testcase(request):
 def _normalize_score(tc, answer_text, score_result):
     """Deprecated (rubric scoring). Kept for any legacy callsites."""
     return round((score_result.get("score_0_100", 0) or 0) / 100.0, 2)
+
+
+@decorators.api_view(["GET"])
+def mobile_stats(request):
+    """Return global and per-run question/response counts."""
+    run_uuid = request.query_params.get("run_uuid")
+
+    total_questions = TestCase.objects.filter(is_active=True).count()
+    total_responses = Result.objects.filter(status="done").count()
+
+    payload = {
+        "ok": True,
+        "total_questions": total_questions,
+        "total_responses": total_responses,
+    }
+
+    if run_uuid:
+        run_responses = Result.objects.filter(
+            run_uuid=run_uuid, status="done", provider="human"
+        ).count()
+        payload["run_responses"] = run_responses
+
+    return response.Response(payload)
