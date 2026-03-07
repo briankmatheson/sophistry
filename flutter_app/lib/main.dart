@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'api.dart';
@@ -730,6 +731,20 @@ class _SophistryHomeState extends State<SophistryHome> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Check'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: currentQuestion == null
+                            ? null
+                            : () {
+                                final title = currentQuestion!['title'] ?? '';
+                                final query = Uri.encodeComponent(title);
+                                final url = Uri.parse('https://www.perplexity.ai/search?q=$query');
+                                launchUrl(url, mode: LaunchMode.externalApplication);
+                              },
+                        child: const Text('Explain'),
                       ),
                     ),
                     const SizedBox(width: 12),
