@@ -237,6 +237,19 @@ class _SophistryHomeState extends State<SophistryHome> {
     }
   }
 
+  /// Sync the test-set dropdown to match the current question's category.
+  void _syncDropdownToQuestion(Map<String, dynamic>? q) {
+    if (q == null) return;
+    final qSetId = q['test_set_id'];
+    if (qSetId != null) {
+      final id = (qSetId as num).toInt();
+      if (id != selectedTestSetId && testSets.any((s) => (s['id'] as num).toInt() == id)) {
+        selectedTestSetId = id;
+        saveTestSetId(id);
+      }
+    }
+  }
+
   void _refreshStats() {
     api.getStats(runUuid: runUuid).then((stats) {
       if (mounted) {
@@ -323,6 +336,7 @@ class _SophistryHomeState extends State<SophistryHome> {
             runUuid = savedRun;
             questionsAnswered = savedProgress;
             currentQuestion = q;
+            _syncDropdownToQuestion(q);
             loading = false;
             statusLine = q == null ? 'No more questions' : '';
           });
@@ -377,6 +391,7 @@ class _SophistryHomeState extends State<SophistryHome> {
       setState(() {
         runUuid = uuid;
         currentQuestion = q;
+        _syncDropdownToQuestion(q);
         loading = false;
         statusLine = q == null ? 'No questions available' : '';
       });
@@ -461,6 +476,7 @@ class _SophistryHomeState extends State<SophistryHome> {
         final q = await api.getQuestion(runUuid!);
         setState(() {
           currentQuestion = q;
+          _syncDropdownToQuestion(q);
           busy = false;
           statusLine = q == null ? 'No more questions' : '';
         });

@@ -196,6 +196,8 @@ def mobile_question(request):
         "slug": tc.slug,
         "title": tc.title,
         "prompt": tc.prompt,
+        "test_set_id": tc.test_set_id,
+        "test_set_name": tc.test_set.name if tc.test_set else None,
     })
 
 
